@@ -55,8 +55,65 @@ export const STATIC_DB: DbSchema = {
     "weeklyAvailability": "",
     "targetPbs": "Sub-17 5K, Sub-4:15 1500m"
   },
-  "courses": [],
-  "seasons": [],
+  "courses": [
+    {
+      "name": "Pera Road Race Short Course",
+      "distance": 4.3,
+      "location": "UOP",
+      "surface": "Road",
+      "description": "Ground - Uda Peradeniya Rd - Gal Palama - University Temple - Marcus - Hilda - Art Theatre - Alwis Pond - Ground",
+      "elevationGain": 90,
+      "id": "1765389136768"
+    }
+  ],
+  "seasons": [
+    {
+      "id": "1765388919909",
+      "name": "2026",
+      "startDate": "2025-09-28T00:00:00.000Z",
+      "startPbs": [
+        {
+          "distance": "1500m",
+          "time": "4:30.44"
+        },
+        {
+          "distance": "3000m",
+          "time": "10:22.00"
+        },
+        {
+          "distance": "5000m",
+          "time": "17:37.67"
+        },
+        {
+          "distance": "10K",
+          "time": "35:52.92"
+        }
+      ],
+      "targetPbs": [
+        {
+          "distance": "1500m",
+          "time": "4:15"
+        },
+        {
+          "distance": "3000m",
+          "time": "9:45"
+        },
+        {
+          "distance": "5000m",
+          "time": "16:40"
+        },
+        {
+          "distance": "10K",
+          "time": "35:30"
+        },
+        {
+          "distance": "Half Marathon",
+          "time": "80:00"
+        }
+      ],
+      "isActive": true
+    }
+  ],
   "shoes": [
     {
       "id": "1765385715138",
