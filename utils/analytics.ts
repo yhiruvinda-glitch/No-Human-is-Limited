@@ -308,24 +308,15 @@ const getSegmentsFromWorkout = (workout: Workout): PerformanceSegment[] => {
     }
 
     // 2. Extract Total
-    // Include Total for: RACES, Continuous types (Easy/Long/Recovery), AND Tempo/Threshold
-    // Tempo/Threshold are continuous efforts even if split manually.
-    // Exclude Total for: Interval/Speed/Hills IF they have intervals defined (assuming total includes rest or is just sum of reps).
-    
-    const isRace = workout.type === WorkoutType.RACE;
-    // Updated: Tempo and Threshold considered continuous for SB purposes
-    const isContinuousRun = [
-        WorkoutType.EASY, 
-        WorkoutType.LONG, 
-        WorkoutType.RECOVERY, 
-        WorkoutType.CROSS_TRAINING, 
-        WorkoutType.TEMPO, 
+    // User Requirement: Do not count total distance for Speed, Threshold, Hills, Intervals.
+    const typesExcludingTotal = [
+        WorkoutType.INTERVAL, 
+        WorkoutType.SPEED, 
+        WorkoutType.HILLS, 
         WorkoutType.THRESHOLD
-    ].includes(workout.type);
-    
-    const isDiscontinuous = [WorkoutType.INTERVAL, WorkoutType.SPEED, WorkoutType.HILLS].includes(workout.type);
+    ];
 
-    const shouldIncludeTotal = isRace || isContinuousRun || (isDiscontinuous && !hasIntervals);
+    const shouldIncludeTotal = !typesExcludingTotal.includes(workout.type);
 
     if (shouldIncludeTotal) {
         if (workout.distance > 0 && workout.duration > 0) {

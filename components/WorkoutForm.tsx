@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect } from 'react';
 import { WorkoutType, Workout, IntervalSet, SurfaceType, Course, Shoe } from '../types';
 import { Plus, Trash2, Save, Wand2, Clock, MapPin, Activity, ListOrdered, Calculator, Copy, Bike, Trophy, Flag, Users, Map } from 'lucide-react';
@@ -162,7 +160,8 @@ const WorkoutForm: React.FC<WorkoutFormProps> = ({ onSave, onCancel, courses = [
 
   const updateInterval = (index: number, field: keyof IntervalSet, value: string | number) => {
     const updatedIntervals = [...(formData.intervals || [])];
-    updatedIntervals[index] = { ...updatedIntervals[index], [field]: value };
+    const val = (field === 'distance' || field === 'reps') ? Number(value) : value;
+    updatedIntervals[index] = { ...updatedIntervals[index], [field]: val };
     setFormData(prev => updateTotalsFromIntervals(prev, updatedIntervals));
   };
 
@@ -183,7 +182,7 @@ const WorkoutForm: React.FC<WorkoutFormProps> = ({ onSave, onCancel, courses = [
 
       const newRep: IntervalSet = {
           reps: 1,
-          distance: defaultDist,
+          distance: Number(defaultDist),
           duration: '',
           recovery: (isTempo || isRace) ? '' : (last.recovery || ''),
           pace: ''
@@ -197,7 +196,8 @@ const WorkoutForm: React.FC<WorkoutFormProps> = ({ onSave, onCancel, courses = [
 
   const updatePrecisionRep = (index: number, field: keyof IntervalSet, value: any) => {
       const updatedIntervals = [...(formData.intervals || [])];
-      updatedIntervals[index] = { ...updatedIntervals[index], [field]: value };
+      const val = (field === 'distance' || field === 'reps') ? Number(value) : value;
+      updatedIntervals[index] = { ...updatedIntervals[index], [field]: val };
       
       // Auto-calc pace if time/dist changed
       if (field === 'duration' || field === 'distance') {
@@ -543,7 +543,7 @@ const WorkoutForm: React.FC<WorkoutFormProps> = ({ onSave, onCancel, courses = [
                                              <input 
                                                  type="number" 
                                                  value={rep.distance} 
-                                                 onChange={(e) => updatePrecisionRep(idx, 'distance', e.target.value)}
+                                                 onChange={(e) => updatePrecisionRep(idx, 'distance', Number(e.target.value))}
                                                  className="bg-transparent border-b border-slate-800 focus:border-brand-500 outline-none w-20 font-mono text-white text-center"
                                                  placeholder="0"
                                              />

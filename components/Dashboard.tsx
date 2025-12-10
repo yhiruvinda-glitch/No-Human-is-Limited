@@ -68,13 +68,17 @@ const Dashboard: React.FC<DashboardProps> = ({ workouts, goals, profile, current
   const totalDuration = filteredWorkouts.reduce((sum, w) => sum + w.duration, 0);
   const totalLoad = filteredWorkouts.reduce((sum, w) => sum + (w.trainingLoad || (w.duration * w.rpe)), 0);
   
-  const avgIntensity = filteredWorkouts.length > 0 
-    ? (filteredWorkouts.reduce((sum, w) => sum + w.rpe, 0) / filteredWorkouts.length).toFixed(1) 
-    : '-';
+  // Calculate Avg Intensity (RPE), ignoring 0 or missing
+  const validRpeWorkouts = filteredWorkouts.filter(w => w.rpe && w.rpe > 0);
+  const avgIntensity = validRpeWorkouts.length > 0 
+    ? (validRpeWorkouts.reduce((sum, w) => sum + w.rpe, 0) / validRpeWorkouts.length).toFixed(1) 
+    : 'N/A';
 
-  const avgHr = filteredWorkouts.filter(w => w.avgHr).length > 0
-    ? Math.round(filteredWorkouts.reduce((sum, w) => sum + (w.avgHr || 0), 0) / filteredWorkouts.filter(w => w.avgHr).length)
-    : '-';
+  // Calculate Avg HR, ignoring missing
+  const validHrWorkouts = filteredWorkouts.filter(w => w.avgHr && w.avgHr > 0);
+  const avgHr = validHrWorkouts.length > 0
+    ? Math.round(validHrWorkouts.reduce((sum, w) => sum + (w.avgHr || 0), 0) / validHrWorkouts.length)
+    : 'N/A';
 
   // Zone Distribution
   const zoneDist = filteredWorkouts.reduce((acc, w) => {
@@ -217,7 +221,7 @@ const Dashboard: React.FC<DashboardProps> = ({ workouts, goals, profile, current
                 <Activity size={16} className="text-red-500" />
                 <span className="text-slate-500 text-[10px] font-bold uppercase tracking-wider group-hover:text-slate-300 transition">Load</span>
             </div>
-            <div className="text-2xl font-bold text-white tracking-tight">{totalLoad}<span className="text-sm text-slate-500 font-normal ml-1">TL</span></div>
+            <div className="text-2xl font-bold text-white tracking-tight">{Math.round(totalLoad)}<span className="text-sm text-slate-500 font-normal ml-1">TL</span></div>
         </div>
 
         <div className="bg-slate-800 p-4 rounded-xl border border-slate-700/50 hover:border-slate-600 transition group">
