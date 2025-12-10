@@ -1,4 +1,4 @@
-import { DbSchema } from '@/types';
+import { DbSchema } from '../types';
 import { INITIAL_WORKOUTS, INITIAL_GOALS, INITIAL_PROFILE, SHOE_OPTIONS } from '../constants';
 
 // Generated Static DB State
