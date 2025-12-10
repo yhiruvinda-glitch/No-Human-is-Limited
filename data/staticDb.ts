@@ -1,4 +1,4 @@
-import { DbSchema, WorkoutType } from '../types';
+import { DbSchema } from '../types';
 import { INITIAL_WORKOUTS, INITIAL_GOALS, INITIAL_PROFILE, SHOE_OPTIONS } from '../constants';
 
 // Generated Static DB State
@@ -6,58 +6,187 @@ export const STATIC_DB: DbSchema = {
   "version": "2024-05-23-initial",
   "workouts": [
     {
-      "id": "1765390978212",
-      "date": "2025-09-29T00:00:00.000Z",
-      "type": WorkoutType.THRESHOLD,
+      "id": "1765395638118",
+      "date": "2025-11-09T00:00:00.000Z",
+      "type": "Tempo",
       "distance": 3,
-      "duration": 10.56,
+      "duration": 11.46,
       "feeling": 5,
-      "rpe": 5,
-      "trainingLoad": 0,
+      "rpe": 8,
+      "trainingLoad": 92,
       "notes": "",
       "intervals": [
         {
           "reps": 1,
           "distance": 1000,
-          "duration": "3:34.2",
-          "recovery": "90s",
-          "pace": "03:34.2"
+          "duration": "3:53",
+          "recovery": "",
+          "pace": "03:53.0"
         },
         {
           "reps": 1,
           "distance": 1000,
-          "duration": "3:29.4",
-          "recovery": "90s",
-          "pace": "03:29.4"
+          "duration": "3:50",
+          "recovery": "",
+          "pace": "03:50.0"
         },
         {
           "reps": 1,
           "distance": 1000,
-          "duration": "3:30.0",
-          "recovery": "90s",
-          "pace": "03:30.0"
+          "duration": "3:43",
+          "recovery": "",
+          "pace": "03:43.0"
         }
       ],
       "splits": [
-        214.2,
-        209.4,
-        210
+        233,
+        230,
+        223
       ],
       "shoe": "Adidas Adizero Evo SL",
       "route": "UOP",
       "courseId": "",
       "surface": "Track",
+      "avgHr": 158,
+      "maxHr": 168,
       "competition": "",
       "team": "",
       "place": "",
       "eventName": "",
-      "title": "Threshold 1",
+      "title": "Tempo 4",
       "isSb": true
+    },
+    {
+      "id": "1765390333603",
+      "date": "2025-11-18T00:00:00.000Z",
+      "type": "Easy Run",
+      "distance": 0.8,
+      "duration": 4.333333333333333,
+      "feeling": 5,
+      "rpe": 5,
+      "trainingLoad": 0,
+      "notes": "",
+      "intervals": [],
+      "splits": [],
+      "shoe": "Adidas Adizero Evo SL",
+      "route": "UOP",
+      "courseId": "",
+      "surface": "Road",
+      "competition": "",
+      "team": "",
+      "place": "",
+      "eventName": "",
+      "title": "Easy Run 5",
+      "isSb": true
+    },
+    {
+      "id": "1765390604930",
+      "date": "2025-11-16T00:00:00.000Z",
+      "type": "Tempo",
+      "distance": 7.1,
+      "duration": 28.976666666666667,
+      "feeling": 5,
+      "rpe": 5,
+      "trainingLoad": 0,
+      "notes": "",
+      "intervals": [],
+      "splits": [],
+      "shoe": "Adidas Adizero Evo SL",
+      "route": "UOP",
+      "courseId": "1765390012761",
+      "surface": "Road",
+      "competition": "",
+      "team": "",
+      "place": "",
+      "eventName": "",
+      "title": "Road Tempo 3",
+      "isSb": true
+    },
+    {
+      "id": "1765395065179",
+      "date": "2025-11-15T00:00:00.000Z",
+      "type": "Threshold",
+      "distance": 6.4,
+      "duration": 23.81,
+      "feeling": 5,
+      "rpe": 7,
+      "trainingLoad": 167,
+      "notes": "",
+      "intervals": [
+        {
+          "reps": 1,
+          "distance": 1600,
+          "duration": "5:58.1",
+          "recovery": "180s",
+          "pace": "03:43.8"
+        },
+        {
+          "reps": 1,
+          "distance": 1600,
+          "duration": "5:58.3",
+          "recovery": "180s",
+          "pace": "03:43.9"
+        },
+        {
+          "reps": 1,
+          "distance": 1600,
+          "duration": "5:58.8",
+          "recovery": "180s",
+          "pace": "03:44.3"
+        },
+        {
+          "reps": 1,
+          "distance": 1600,
+          "duration": "5:53.5",
+          "recovery": "180s",
+          "pace": "03:40.9"
+        }
+      ],
+      "splits": [
+        358.1,
+        358.3,
+        358.8,
+        353.5
+      ],
+      "shoe": "Adidas Adizero Evo SL",
+      "route": "UOP",
+      "courseId": "",
+      "surface": "Track",
+      "avgHr": 158,
+      "maxHr": 181,
+      "competition": "",
+      "team": "",
+      "place": "",
+      "eventName": "",
+      "title": "Threshold 4",
+      "isSb": true
+    },
+    {
+      "id": "1765390289740",
+      "date": "2025-11-13T00:00:00.000Z",
+      "type": "Easy Run",
+      "distance": 4.4,
+      "duration": 22.916666666666668,
+      "feeling": 5,
+      "rpe": 5,
+      "trainingLoad": 0,
+      "notes": "",
+      "intervals": [],
+      "splits": [],
+      "shoe": "Adidas Adizero Evo SL",
+      "route": "UOP",
+      "courseId": "",
+      "surface": "Road",
+      "competition": "",
+      "team": "",
+      "place": "",
+      "eventName": "",
+      "title": "Easy Run 4"
     },
     {
       "id": "1765390874412",
       "date": "2025-11-11T00:00:00.000Z",
-      "type": WorkoutType.SPEED,
+      "type": "Speed Work",
       "distance": 1,
       "duration": 2.51,
       "feeling": 5,
@@ -67,70 +196,70 @@ export const STATIC_DB: DbSchema = {
       "intervals": [
         {
           "reps": 1,
-          "distance": 100,
+          "distance": "100",
           "duration": "15.3",
           "recovery": "90s",
           "pace": "02:33.0"
         },
         {
           "reps": 1,
-          "distance": 100,
+          "distance": "100",
           "duration": "15.4",
           "recovery": "90s",
           "pace": "02:34.0"
         },
         {
           "reps": 1,
-          "distance": 100,
+          "distance": "100",
           "duration": "15.0",
           "recovery": "90s",
           "pace": "02:30.0"
         },
         {
           "reps": 1,
-          "distance": 100,
+          "distance": "100",
           "duration": "15.0",
           "recovery": "90s",
           "pace": "02:30.0"
         },
         {
           "reps": 1,
-          "distance": 100,
+          "distance": "100",
           "duration": "15.0",
           "recovery": "90s",
           "pace": "02:30.0"
         },
         {
           "reps": 1,
-          "distance": 100,
+          "distance": "100",
           "duration": "15.1",
           "recovery": "90s",
           "pace": "02:31.0"
         },
         {
           "reps": 1,
-          "distance": 100,
+          "distance": "100",
           "duration": "14.9",
           "recovery": "90s",
           "pace": "02:29.0"
         },
         {
           "reps": 1,
-          "distance": 100,
+          "distance": "100",
           "duration": "15.3",
           "recovery": "90s",
           "pace": "02:33.0"
         },
         {
           "reps": 1,
-          "distance": 100,
+          "distance": "100",
           "duration": "14.8",
           "recovery": "90s",
           "pace": "02:28.0"
         },
         {
           "reps": 1,
-          "distance": 100,
+          "distance": "100",
           "duration": "14.8",
           "recovery": "90s",
           "pace": "02:28.0"
@@ -160,77 +289,83 @@ export const STATIC_DB: DbSchema = {
       "isSb": true
     },
     {
-      "id": "1765390333603",
-      "date": "2025-11-18T00:00:00.000Z",
-      "type": WorkoutType.EASY,
-      "distance": 0.8,
-      "duration": 4.333333333333333,
+      "id": "1765393942394",
+      "date": "2025-11-04T00:00:00.000Z",
+      "type": "Threshold",
+      "distance": 6,
+      "duration": 21.96,
       "feeling": 5,
-      "rpe": 5,
-      "trainingLoad": 0,
+      "rpe": 7,
+      "trainingLoad": 154,
       "notes": "",
-      "intervals": [],
-      "splits": [],
+      "intervals": [
+        {
+          "reps": 1,
+          "distance": 1000,
+          "duration": "3:38.6",
+          "recovery": "150s",
+          "pace": "03:38.6"
+        },
+        {
+          "reps": 1,
+          "distance": 1000,
+          "duration": "3:41.9",
+          "recovery": "150s",
+          "pace": "03:41.9"
+        },
+        {
+          "reps": 1,
+          "distance": 1000,
+          "duration": "3:41.1",
+          "recovery": "150s",
+          "pace": "03:41.1"
+        },
+        {
+          "reps": 1,
+          "distance": 1000,
+          "duration": "3:38.7",
+          "recovery": "150s",
+          "pace": "03:38.7"
+        },
+        {
+          "reps": 1,
+          "distance": 1000,
+          "duration": "3:39.7",
+          "recovery": "150s",
+          "pace": "03:39.7"
+        },
+        {
+          "reps": 1,
+          "distance": 1000,
+          "duration": "3:37.6",
+          "recovery": "150s",
+          "pace": "03:37.6"
+        }
+      ],
+      "splits": [
+        218.6,
+        221.9,
+        221.1,
+        218.7,
+        219.7,
+        217.6
+      ],
       "shoe": "Adidas Adizero Evo SL",
       "route": "UOP",
       "courseId": "",
-      "surface": "Road",
+      "surface": "Track",
+      "avgHr": 151,
+      "maxHr": 182,
       "competition": "",
       "team": "",
       "place": "",
       "eventName": "",
-      "title": "Easy Run 5",
-      "isSb": true
-    },
-    {
-      "id": "1765390604930",
-      "date": "2025-11-16T00:00:00.000Z",
-      "type": WorkoutType.TEMPO,
-      "distance": 7.1,
-      "duration": 28.976666666666667,
-      "feeling": 5,
-      "rpe": 5,
-      "trainingLoad": 0,
-      "notes": "",
-      "intervals": [],
-      "splits": [],
-      "shoe": "Adidas Adizero Evo SL",
-      "route": "UOP",
-      "courseId": "1765390012761",
-      "surface": "Road",
-      "competition": "",
-      "team": "",
-      "place": "",
-      "eventName": "",
-      "title": "Road Tempo 3",
-      "isSb": true
-    },
-    {
-      "id": "1765390289740",
-      "date": "2025-11-13T00:00:00.000Z",
-      "type": WorkoutType.EASY,
-      "distance": 4.4,
-      "duration": 22.916666666666668,
-      "feeling": 5,
-      "rpe": 5,
-      "trainingLoad": 0,
-      "notes": "",
-      "intervals": [],
-      "splits": [],
-      "shoe": "Adidas Adizero Evo SL",
-      "route": "UOP",
-      "courseId": "",
-      "surface": "Road",
-      "competition": "",
-      "team": "",
-      "place": "",
-      "eventName": "",
-      "title": "Easy Run 4"
+      "title": "Threshold 3"
     },
     {
       "id": "1765390206466",
       "date": "2025-10-31T00:00:00.000Z",
-      "type": WorkoutType.EASY,
+      "type": "Easy Run",
       "distance": 4.3,
       "duration": 20.716666666666665,
       "feeling": 5,
@@ -252,7 +387,7 @@ export const STATIC_DB: DbSchema = {
     {
       "id": "1765390533243",
       "date": "2025-10-13T00:00:00.000Z",
-      "type": WorkoutType.TEMPO,
+      "type": "Tempo",
       "distance": 4.3,
       "duration": 16.475,
       "feeling": 5,
@@ -275,7 +410,7 @@ export const STATIC_DB: DbSchema = {
     {
       "id": "1765390164181",
       "date": "2025-10-11T00:00:00.000Z",
-      "type": WorkoutType.EASY,
+      "type": "Easy Run",
       "distance": 2.5,
       "duration": 12,
       "feeling": 5,
@@ -295,9 +430,74 @@ export const STATIC_DB: DbSchema = {
       "title": "Easy Run 2"
     },
     {
+      "id": "1765392156946",
+      "date": "2025-10-07T00:00:00.000Z",
+      "type": "Threshold",
+      "distance": 3,
+      "duration": 9.77,
+      "feeling": 5,
+      "rpe": 5,
+      "trainingLoad": 0,
+      "notes": "",
+      "intervals": [
+        {
+          "reps": 1,
+          "distance": 600,
+          "duration": "2:01.0",
+          "recovery": "90s",
+          "pace": "03:21.7"
+        },
+        {
+          "reps": 1,
+          "distance": 600,
+          "duration": "1:59.8",
+          "recovery": "90s",
+          "pace": "03:19.7"
+        },
+        {
+          "reps": 1,
+          "distance": 600,
+          "duration": "1:56.0",
+          "recovery": "90s",
+          "pace": "03:13.3"
+        },
+        {
+          "reps": 1,
+          "distance": 600,
+          "duration": "1:57.3",
+          "recovery": "90s",
+          "pace": "03:15.5"
+        },
+        {
+          "reps": 1,
+          "distance": 600,
+          "duration": "1:51.9",
+          "recovery": "90s",
+          "pace": "03:06.5"
+        }
+      ],
+      "splits": [
+        121,
+        119.8,
+        116,
+        117.3,
+        111.9
+      ],
+      "shoe": "Adidas Adizero Evo SL",
+      "route": "UOP",
+      "courseId": "",
+      "surface": "Track",
+      "competition": "",
+      "team": "",
+      "place": "",
+      "eventName": "",
+      "title": "Threshold 2",
+      "isSb": true
+    },
+    {
       "id": "1765390444151",
       "date": "2025-10-01T00:00:00.000Z",
-      "type": WorkoutType.TEMPO,
+      "type": "Tempo",
       "distance": 4.3,
       "duration": 16.588333333333335,
       "feeling": 5,
@@ -318,9 +518,58 @@ export const STATIC_DB: DbSchema = {
       "isSb": true
     },
     {
+      "id": "1765390978212",
+      "date": "2025-09-29T00:00:00.000Z",
+      "type": "Threshold",
+      "distance": 3,
+      "duration": 10.56,
+      "feeling": 5,
+      "rpe": 5,
+      "trainingLoad": 0,
+      "notes": "",
+      "intervals": [
+        {
+          "reps": 1,
+          "distance": "1000",
+          "duration": "3:34.2",
+          "recovery": "90s",
+          "pace": "03:34.2"
+        },
+        {
+          "reps": 1,
+          "distance": "1000",
+          "duration": "3:29.4",
+          "recovery": "90s",
+          "pace": "03:29.4"
+        },
+        {
+          "reps": 1,
+          "distance": "1000",
+          "duration": "3:30.0",
+          "recovery": "90s",
+          "pace": "03:30.0"
+        }
+      ],
+      "splits": [
+        214.2,
+        209.4,
+        210
+      ],
+      "shoe": "Adidas Adizero Evo SL",
+      "route": "UOP",
+      "courseId": "",
+      "surface": "Track",
+      "competition": "",
+      "team": "",
+      "place": "",
+      "eventName": "",
+      "title": "Threshold 1",
+      "isSb": true
+    },
+    {
       "id": "1765390096484",
       "date": "2025-09-28T00:00:00.000Z",
-      "type": WorkoutType.EASY,
+      "type": "Easy Run",
       "distance": 5.2,
       "duration": 22.366666666666667,
       "feeling": 5,
@@ -388,7 +637,7 @@ export const STATIC_DB: DbSchema = {
       }
     ],
     "injuryHistory": [],
-    "weeklyAvailability": "",
+    "weeklyAvailability": "4 days/week, 20-25km/week",
     "targetPbs": "Sub-17 5K, Sub-4:15 1500m"
   },
   "courses": [
