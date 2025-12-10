@@ -172,7 +172,7 @@ const Analysis: React.FC<AnalysisProps> = ({ workouts }) => {
                             ))}
                         </Pie>
                         <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '8px' }} itemStyle={{color: '#fff'}} />
-                        <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{fontSize: '11px', color: '#94a3b8'}} />
+                        <Legend verticalAlign="bottom" height={36} iconType="plainline" wrapperStyle={{fontSize: '11px', color: '#94a3b8'}} />
                     </PieChart>
                 </ResponsiveContainer>
                 {/* Center Stats */}
@@ -195,7 +195,7 @@ const Analysis: React.FC<AnalysisProps> = ({ workouts }) => {
                     <YAxis yAxisId="left" stroke="#60a5fa" fontSize={11} domain={['auto', 'auto']} tickLine={false} axisLine={false} label={{ value: 'Pace (min/km)', angle: -90, position: 'insideLeft', fill: '#60a5fa' }} />
                     <YAxis yAxisId="right" orientation="right" stroke="#f87171" fontSize={11} domain={['dataMin - 10', 'auto']} tickLine={false} axisLine={false} label={{ value: 'HR (bpm)', angle: 90, position: 'insideRight', fill: '#f87171' }} />
                     <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '8px' }} />
-                    <Legend iconType="plainLine" wrapperStyle={{paddingTop: '10px'}} />
+                    <Legend iconType="plainline" wrapperStyle={{paddingTop: '10px'}} />
                     <Line yAxisId="left" type="monotone" dataKey="pace" stroke="#60a5fa" name="Pace (min/km)" strokeWidth={2} dot={{r:3}} activeDot={{r:6}} />
                     <Line yAxisId="right" type="monotone" dataKey="avgHr" stroke="#f87171" name="Avg HR" strokeWidth={2} connectNulls dot={{r:3}} activeDot={{r:6}} />
                 </LineChart>

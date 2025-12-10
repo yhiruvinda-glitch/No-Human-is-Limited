@@ -65,8 +65,8 @@ const Courses: React.FC<CoursesProps> = ({ courses, onSave }) => {
       } else {
           // Create new
           const newCourse: Course = {
-              id: Date.now().toString(),
               ...formData as Course,
+              id: Date.now().toString(),
               bestEffort: undefined
           };
           onSave([...courses, newCourse]);

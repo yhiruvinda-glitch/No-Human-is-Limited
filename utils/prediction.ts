@@ -1,4 +1,5 @@
 
+
 import { Workout, Goal, WorkoutType, RacePrediction } from '../types';
 import { parseTimeStringToSeconds, formatSecondsToTime } from './analytics';
 
@@ -128,7 +129,7 @@ export const getFitnessTrend = (workouts: Workout[]) => {
             (rw.type === WorkoutType.RACE || rw.type === WorkoutType.INTERVAL || rw.type === WorkoutType.TEMPO)
         );
 
-        let best5kSeconds = null;
+        let best5kSeconds: number | null = null;
 
         recentWorkouts.forEach(rw => {
             const durationSec = rw.duration * 60;
