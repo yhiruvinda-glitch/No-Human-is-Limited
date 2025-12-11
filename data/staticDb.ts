@@ -5,6 +5,114 @@ export const STATIC_DB: DbSchema = {
   "version": "2024-05-23-initial",
   "workouts": [
     {
+      "id": "1765483323151",
+      "date": "2025-12-11T00:00:00.000Z",
+      "type": "Speed Work",
+      "distance": 4,
+      "duration": 12.84,
+      "feeling": 5,
+      "rpe": 8,
+      "trainingLoad": 103,
+      "notes": "Satisfied speed work, got them controlled under the fatigue.",
+      "intervals": [
+        {
+          "reps": 1,
+          "distance": 400,
+          "duration": "77.47",
+          "recovery": "100s",
+          "pace": "03:13.7"
+        },
+        {
+          "reps": 1,
+          "distance": 400,
+          "duration": "76.16",
+          "recovery": "100s",
+          "pace": "03:10.4"
+        },
+        {
+          "reps": 1,
+          "distance": 400,
+          "duration": "76.63",
+          "recovery": "100s",
+          "pace": "03:11.6"
+        },
+        {
+          "reps": 1,
+          "distance": 400,
+          "duration": "75.63",
+          "recovery": "100s",
+          "pace": "03:09.1"
+        },
+        {
+          "reps": 1,
+          "distance": 400,
+          "duration": "77.41",
+          "recovery": "100s",
+          "pace": "03:13.5"
+        },
+        {
+          "reps": 1,
+          "distance": 400,
+          "duration": "77.31",
+          "recovery": "100s",
+          "pace": "03:13.3"
+        },
+        {
+          "reps": 1,
+          "distance": 400,
+          "duration": "77.13",
+          "recovery": "100s",
+          "pace": "03:12.8"
+        },
+        {
+          "reps": 1,
+          "distance": 400,
+          "duration": "78.00",
+          "recovery": "100s",
+          "pace": "03:15.0"
+        },
+        {
+          "reps": 1,
+          "distance": 400,
+          "duration": "78.31",
+          "recovery": "100s",
+          "pace": "03:15.8"
+        },
+        {
+          "reps": 1,
+          "distance": 400,
+          "duration": "76.16",
+          "recovery": "100s",
+          "pace": "03:10.4"
+        }
+      ],
+      "splits": [
+        77.47,
+        76.16,
+        76.63,
+        75.63,
+        77.41,
+        77.31,
+        77.13,
+        78,
+        78.31,
+        76.16
+      ],
+      "shoe": "Adidas Adizero Evo SL",
+      "route": "UOP",
+      "courseId": "",
+      "surface": "Track",
+      "avgHr": 151,
+      "maxHr": 176,
+      "competition": "",
+      "team": "",
+      "place": "",
+      "eventName": "",
+      "title": "Speed Work 2",
+      "isPb": false,
+      "isSb": true
+    },
+    {
       "id": "1765427224516",
       "date": "2025-12-10T00:00:00.000Z",
       "type": "Threshold",
@@ -52,7 +160,9 @@ export const STATIC_DB: DbSchema = {
       "team": "",
       "place": "",
       "eventName": "",
-      "title": "Threshold 7"
+      "title": "Threshold 7",
+      "isPb": false,
+      "isSb": false
     },
     {
       "id": "1765428755288",
@@ -76,7 +186,9 @@ export const STATIC_DB: DbSchema = {
       "team": "",
       "place": "",
       "eventName": "",
-      "title": "Treadmill Run 10"
+      "title": "Treadmill Run 10",
+      "isPb": false,
+      "isSb": false
     },
     {
       "id": "1765428627500",
@@ -100,7 +212,9 @@ export const STATIC_DB: DbSchema = {
       "team": "",
       "place": "",
       "eventName": "",
-      "title": "Treadmill Run 9"
+      "title": "Treadmill Run 9",
+      "isPb": false,
+      "isSb": false
     },
     {
       "id": "1765428514430",
@@ -124,7 +238,9 @@ export const STATIC_DB: DbSchema = {
       "team": "",
       "place": "",
       "eventName": "",
-      "title": "Treadmill Run 8"
+      "title": "Treadmill Run 8",
+      "isPb": false,
+      "isSb": false
     },
     {
       "id": "1765428403119",
@@ -148,7 +264,9 @@ export const STATIC_DB: DbSchema = {
       "team": "",
       "place": "",
       "eventName": "",
-      "title": "Treadmill Run 7"
+      "title": "Treadmill Run 7",
+      "isPb": false,
+      "isSb": false
     },
     {
       "id": "1765426994173",
@@ -198,7 +316,9 @@ export const STATIC_DB: DbSchema = {
       "team": "",
       "place": "",
       "eventName": "",
-      "title": "Threshold 6"
+      "title": "Threshold 6",
+      "isPb": false,
+      "isSb": false
     },
     {
       "id": "1765426818872",
@@ -265,7 +385,8 @@ export const STATIC_DB: DbSchema = {
       "place": "",
       "eventName": "",
       "title": "Threshold 5",
-      "isSb": true
+      "isSb": false,
+      "isPb": false
     },
     {
       "id": "1765426642462",
@@ -348,7 +469,8 @@ export const STATIC_DB: DbSchema = {
       "place": "",
       "eventName": "",
       "title": "Tempo 5",
-      "isSb": true
+      "isSb": true,
+      "isPb": false
     },
     {
       "id": "1765426418124",
@@ -407,7 +529,8 @@ export const STATIC_DB: DbSchema = {
       "place": "",
       "eventName": "",
       "title": "Intervals 1",
-      "isSb": true
+      "isSb": true,
+      "isPb": false
     },
     {
       "id": "1765390333603",
@@ -430,7 +553,8 @@ export const STATIC_DB: DbSchema = {
       "place": "",
       "eventName": "",
       "title": "Easy Run 5",
-      "isSb": true
+      "isSb": false,
+      "isPb": false
     },
     {
       "id": "1765390604930",
@@ -453,7 +577,8 @@ export const STATIC_DB: DbSchema = {
       "place": "",
       "eventName": "",
       "title": "Road Tempo 3",
-      "isSb": true
+      "isSb": false,
+      "isPb": false
     },
     {
       "id": "1765395065179",
@@ -512,10 +637,11 @@ export const STATIC_DB: DbSchema = {
       "place": "",
       "eventName": "",
       "title": "Threshold 4",
-      "isSb": true
+      "isSb": true,
+      "isPb": false
     },
     {
-      "id": "1765427683374",
+      "id": "1765482917219",
       "date": "2025-11-13T00:00:00.000Z",
       "type": "Hill Repeats",
       "distance": 1.8,
@@ -529,21 +655,21 @@ export const STATIC_DB: DbSchema = {
           "reps": 1,
           "distance": 600,
           "duration": "2:46.0",
-          "recovery": "Walk down",
+          "recovery": "Walk Down",
           "pace": "04:36.7"
         },
         {
           "reps": 1,
           "distance": 600,
           "duration": "2:46.0",
-          "recovery": "Walk down",
+          "recovery": "Walk Down",
           "pace": "04:36.7"
         },
         {
           "reps": 1,
           "distance": 600,
           "duration": "2:41.0",
-          "recovery": "Walk down",
+          "recovery": "Walk Down",
           "pace": "04:28.3"
         }
       ],
@@ -562,7 +688,9 @@ export const STATIC_DB: DbSchema = {
       "team": "",
       "place": "",
       "eventName": "",
-      "title": "Hill Repeats 1"
+      "title": "Hill Repeats 1",
+      "isPb": false,
+      "isSb": false
     },
     {
       "id": "1765390289740",
@@ -584,7 +712,9 @@ export const STATIC_DB: DbSchema = {
       "team": "",
       "place": "",
       "eventName": "",
-      "title": "Easy Run 4"
+      "title": "Easy Run 4",
+      "isPb": false,
+      "isSb": false
     },
     {
       "id": "1765390874412",
@@ -599,70 +729,70 @@ export const STATIC_DB: DbSchema = {
       "intervals": [
         {
           "reps": 1,
-          "distance": 100,
+          "distance": "100",
           "duration": "15.3",
           "recovery": "90s",
           "pace": "02:33.0"
         },
         {
           "reps": 1,
-          "distance": 100,
+          "distance": "100",
           "duration": "15.4",
           "recovery": "90s",
           "pace": "02:34.0"
         },
         {
           "reps": 1,
-          "distance": 100,
+          "distance": "100",
           "duration": "15.0",
           "recovery": "90s",
           "pace": "02:30.0"
         },
         {
           "reps": 1,
-          "distance": 100,
+          "distance": "100",
           "duration": "15.0",
           "recovery": "90s",
           "pace": "02:30.0"
         },
         {
           "reps": 1,
-          "distance": 100,
+          "distance": "100",
           "duration": "15.0",
           "recovery": "90s",
           "pace": "02:30.0"
         },
         {
           "reps": 1,
-          "distance": 100,
+          "distance": "100",
           "duration": "15.1",
           "recovery": "90s",
           "pace": "02:31.0"
         },
         {
           "reps": 1,
-          "distance": 100,
+          "distance": "100",
           "duration": "14.9",
           "recovery": "90s",
           "pace": "02:29.0"
         },
         {
           "reps": 1,
-          "distance": 100,
+          "distance": "100",
           "duration": "15.3",
           "recovery": "90s",
           "pace": "02:33.0"
         },
         {
           "reps": 1,
-          "distance": 100,
+          "distance": "100",
           "duration": "14.8",
           "recovery": "90s",
           "pace": "02:28.0"
         },
         {
           "reps": 1,
-          "distance": 100,
+          "distance": "100",
           "duration": "14.8",
           "recovery": "90s",
           "pace": "02:28.0"
@@ -689,7 +819,8 @@ export const STATIC_DB: DbSchema = {
       "place": "",
       "eventName": "",
       "title": "Speed Work 1",
-      "isSb": true
+      "isSb": true,
+      "isPb": false
     },
     {
       "id": "1765395638118",
@@ -740,7 +871,8 @@ export const STATIC_DB: DbSchema = {
       "place": "",
       "eventName": "",
       "title": "Tempo 4",
-      "isSb": true
+      "isSb": true,
+      "isPb": true
     },
     {
       "id": "1765393942394",
@@ -814,7 +946,9 @@ export const STATIC_DB: DbSchema = {
       "team": "",
       "place": "",
       "eventName": "",
-      "title": "Threshold 3"
+      "title": "Threshold 3",
+      "isPb": false,
+      "isSb": false
     },
     {
       "id": "1765390206466",
@@ -836,7 +970,9 @@ export const STATIC_DB: DbSchema = {
       "team": "",
       "place": "",
       "eventName": "",
-      "title": "Easy Run 3"
+      "title": "Easy Run 3",
+      "isPb": false,
+      "isSb": false
     },
     {
       "id": "1765428279967",
@@ -860,7 +996,9 @@ export const STATIC_DB: DbSchema = {
       "team": "",
       "place": "",
       "eventName": "",
-      "title": "Treadmill Run 6"
+      "title": "Treadmill Run 6",
+      "isPb": false,
+      "isSb": false
     },
     {
       "id": "1765428207190",
@@ -884,7 +1022,9 @@ export const STATIC_DB: DbSchema = {
       "team": "",
       "place": "",
       "eventName": "",
-      "title": "Treadmill Run 5"
+      "title": "Treadmill Run 5",
+      "isPb": false,
+      "isSb": false
     },
     {
       "id": "1765428102657",
@@ -908,7 +1048,9 @@ export const STATIC_DB: DbSchema = {
       "team": "",
       "place": "",
       "eventName": "",
-      "title": "Treadmill Run 4"
+      "title": "Treadmill Run 4",
+      "isPb": false,
+      "isSb": false
     },
     {
       "id": "1765428036887",
@@ -931,7 +1073,9 @@ export const STATIC_DB: DbSchema = {
       "team": "",
       "place": "",
       "eventName": "",
-      "title": "Treadmill Run 3"
+      "title": "Treadmill Run 3",
+      "isPb": false,
+      "isSb": false
     },
     {
       "id": "1765427967335",
@@ -954,7 +1098,9 @@ export const STATIC_DB: DbSchema = {
       "team": "",
       "place": "",
       "eventName": "",
-      "title": "Treadmill Run 2"
+      "title": "Treadmill Run 2",
+      "isPb": false,
+      "isSb": false
     },
     {
       "id": "1765427903264",
@@ -977,7 +1123,9 @@ export const STATIC_DB: DbSchema = {
       "team": "",
       "place": "",
       "eventName": "",
-      "title": "Treadmill Run 1"
+      "title": "Treadmill Run 1",
+      "isPb": false,
+      "isSb": false
     },
     {
       "id": "1765390533243",
@@ -1000,7 +1148,8 @@ export const STATIC_DB: DbSchema = {
       "place": "",
       "eventName": "",
       "title": "Road Tempo 2",
-      "isSb": true
+      "isSb": false,
+      "isPb": false
     },
     {
       "id": "1765390164181",
@@ -1022,7 +1171,9 @@ export const STATIC_DB: DbSchema = {
       "team": "",
       "place": "",
       "eventName": "",
-      "title": "Easy Run 2"
+      "title": "Easy Run 2",
+      "isPb": false,
+      "isSb": false
     },
     {
       "id": "1765392156946",
@@ -1087,7 +1238,8 @@ export const STATIC_DB: DbSchema = {
       "place": "",
       "eventName": "",
       "title": "Threshold 2",
-      "isSb": true
+      "isSb": true,
+      "isPb": false
     },
     {
       "id": "1765429102188",
@@ -1154,7 +1306,8 @@ export const STATIC_DB: DbSchema = {
       "place": "6",
       "eventName": "5K",
       "title": "LSR Colombo - 5K",
-      "isSb": true
+      "isSb": true,
+      "isPb": true
     },
     {
       "id": "1765390444151",
@@ -1177,7 +1330,8 @@ export const STATIC_DB: DbSchema = {
       "place": "",
       "eventName": "",
       "title": "Road Tempo 1",
-      "isSb": true
+      "isSb": false,
+      "isPb": false
     },
     {
       "id": "1765390978212",
@@ -1192,21 +1346,21 @@ export const STATIC_DB: DbSchema = {
       "intervals": [
         {
           "reps": 1,
-          "distance": 1000,
+          "distance": "1000",
           "duration": "3:34.2",
           "recovery": "90s",
           "pace": "03:34.2"
         },
         {
           "reps": 1,
-          "distance": 1000,
+          "distance": "1000",
           "duration": "3:29.4",
           "recovery": "90s",
           "pace": "03:29.4"
         },
         {
           "reps": 1,
-          "distance": 1000,
+          "distance": "1000",
           "duration": "3:30.0",
           "recovery": "90s",
           "pace": "03:30.0"
@@ -1226,7 +1380,8 @@ export const STATIC_DB: DbSchema = {
       "place": "",
       "eventName": "",
       "title": "Threshold 1",
-      "isSb": true
+      "isSb": false,
+      "isPb": false
     },
     {
       "id": "1765390096484",
@@ -1248,7 +1403,9 @@ export const STATIC_DB: DbSchema = {
       "team": "",
       "place": "",
       "eventName": "",
-      "title": "Easy Run 1"
+      "title": "Easy Run 1",
+      "isPb": false,
+      "isSb": false
     }
   ],
   "goals": [
@@ -1340,7 +1497,13 @@ export const STATIC_DB: DbSchema = {
       "surface": "Road",
       "description": "",
       "elevationGain": 45,
-      "id": "1765427542665"
+      "id": "1765427542665",
+      "bestEffort": {
+        "seconds": 161,
+        "formattedTime": "02:41.00",
+        "date": "2025-11-13T00:00:00.000Z",
+        "workoutId": "1765482917219"
+      }
     }
   ],
   "seasons": [
@@ -1363,7 +1526,7 @@ export const STATIC_DB: DbSchema = {
         },
         {
           "distance": "10K",
-          "time": "38:00"
+          "time": "35:52.92"
         },
         {
           "distance": "Half Marathon",
@@ -1377,7 +1540,7 @@ export const STATIC_DB: DbSchema = {
         },
         {
           "distance": "3000m",
-          "time": "9:30"
+          "time": "9:45"
         },
         {
           "distance": "5000m",
@@ -1385,7 +1548,7 @@ export const STATIC_DB: DbSchema = {
         },
         {
           "distance": "10K",
-          "time": "35:30"
+          "time": "38:00"
         },
         {
           "distance": "Half Marathon",
