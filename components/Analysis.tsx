@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Workout } from '../types';
 import { 
@@ -7,6 +6,7 @@ import {
 } from 'recharts';
 import { generateRacePredictions, calculateVDOT, getBestPerformance, getFitnessTrend } from '../utils/prediction';
 import { INITIAL_GOALS } from '../constants'; // Fallback goals for baseline
+import { formatSecondsToTime } from '../utils/analytics';
 
 interface AnalysisProps {
   workouts: Workout[];
@@ -32,7 +32,13 @@ const Analysis: React.FC<AnalysisProps> = ({ workouts }) => {
         weeks[key].distance += w.distance;
         weeks[key].load += (w.trainingLoad || (w.duration * w.rpe));
     });
-    return Object.values(weeks).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    return Object.values(weeks)
+        .map(w => ({
+            ...w,
+            distance: Number(w.distance.toFixed(1)), // Fix decimals for data points
+            load: Math.round(w.load) // Fix decimals for data points
+        }))
+        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   }, [sortedWorkouts]);
 
   // 2. Zone Distribution Data
@@ -51,7 +57,7 @@ const Analysis: React.FC<AnalysisProps> = ({ workouts }) => {
         if(w.shoe) counts[w.shoe] = (counts[w.shoe] || 0) + w.distance;
     });
     return Object.entries(counts)
-        .map(([name, value]) => ({ name, value: Math.round(value) }))
+        .map(([name, value]) => ({ name, value: Number(value.toFixed(1)) })) // Fix decimals
         .sort((a,b) => b.value - a.value);
   }, [sortedWorkouts]);
 
@@ -73,6 +79,9 @@ const Analysis: React.FC<AnalysisProps> = ({ workouts }) => {
       date: new Date(p.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
       minutes: p.predicted5k ? Number((p.predicted5k / 60).toFixed(2)) : null
   }));
+
+  // Helper for charts
+  const timeFormatter = (minutes: number) => formatSecondsToTime(minutes * 60);
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 pb-10">
@@ -118,10 +127,18 @@ const Analysis: React.FC<AnalysisProps> = ({ workouts }) => {
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
                     <XAxis dataKey="date" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
-                    <YAxis domain={['auto', 'auto']} stroke="#22c55e" fontSize={11} tickLine={false} axisLine={false} label={{ value: 'Predicted 5K (min)', angle: -90, position: 'insideLeft', fill: '#22c55e' }} />
+                    <YAxis 
+                        domain={['auto', 'auto']} 
+                        stroke="#22c55e" 
+                        fontSize={11} 
+                        tickLine={false} 
+                        axisLine={false} 
+                        label={{ value: 'Predicted 5K', angle: -90, position: 'insideLeft', fill: '#22c55e' }}
+                        tickFormatter={timeFormatter} 
+                    />
                     <Tooltip 
                         contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '8px' }}
-                        formatter={(value: number) => [`${Math.floor(value)}:${Math.round((value % 1) * 60).toString().padStart(2, '0')}`, 'Predicted Time']}
+                        formatter={(value: number) => [timeFormatter(value), 'Predicted Time']}
                     />
                     <Area type="monotone" dataKey="minutes" stroke="#22c55e" fillOpacity={1} fill="url(#colorFit)" strokeWidth={2} />
                 </AreaChart>
@@ -139,8 +156,27 @@ const Analysis: React.FC<AnalysisProps> = ({ workouts }) => {
                     <ComposedChart data={weeklyData}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
                         <XAxis dataKey="date" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} dy={10} />
-                        <YAxis yAxisId="left" stroke="#4ade80" fontSize={11} tickLine={false} axisLine={false} label={{ value: 'km', angle: -90, position: 'insideLeft', fill: '#4ade80' }} />
-                        <YAxis yAxisId="right" orientation="right" stroke="#f472b6" fontSize={11} tickLine={false} axisLine={false} label={{ value: 'Load', angle: 90, position: 'insideRight', fill: '#f472b6' }} />
+                        {/* Distance Y Axis - No Decimals */}
+                        <YAxis 
+                            yAxisId="left" 
+                            stroke="#4ade80" 
+                            fontSize={11} 
+                            tickLine={false} 
+                            axisLine={false} 
+                            tickFormatter={(val) => Math.round(val).toString()} 
+                            label={{ value: 'km', angle: -90, position: 'insideLeft', fill: '#4ade80' }} 
+                        />
+                        {/* Load Y Axis - No Decimals */}
+                        <YAxis 
+                            yAxisId="right" 
+                            orientation="right" 
+                            stroke="#f472b6" 
+                            fontSize={11} 
+                            tickLine={false} 
+                            axisLine={false} 
+                            tickFormatter={(val) => Math.round(val).toString()}
+                            label={{ value: 'Load', angle: 90, position: 'insideRight', fill: '#f472b6' }} 
+                        />
                         <Tooltip 
                             contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', color: '#f8fafc', borderRadius: '8px' }}
                             itemStyle={{ fontSize: '12px' }}
@@ -192,9 +228,24 @@ const Analysis: React.FC<AnalysisProps> = ({ workouts }) => {
                 <LineChart data={trendData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
                     <XAxis dataKey="date" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} dy={10} />
-                    <YAxis yAxisId="left" stroke="#60a5fa" fontSize={11} domain={['auto', 'auto']} tickLine={false} axisLine={false} label={{ value: 'Pace (min/km)', angle: -90, position: 'insideLeft', fill: '#60a5fa' }} />
+                    <YAxis 
+                        yAxisId="left" 
+                        stroke="#60a5fa" 
+                        fontSize={11} 
+                        domain={['dataMin', 'dataMax']} 
+                        tickLine={false} 
+                        axisLine={false} 
+                        label={{ value: 'Pace (min/km)', angle: -90, position: 'insideLeft', fill: '#60a5fa' }} 
+                        tickFormatter={timeFormatter}
+                    />
                     <YAxis yAxisId="right" orientation="right" stroke="#f87171" fontSize={11} domain={['dataMin - 10', 'auto']} tickLine={false} axisLine={false} label={{ value: 'HR (bpm)', angle: 90, position: 'insideRight', fill: '#f87171' }} />
-                    <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '8px' }} />
+                    <Tooltip 
+                        contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '8px' }}
+                        formatter={(value: number, name: string) => {
+                            if (name === 'Pace (min/km)') return [timeFormatter(value), name];
+                            return [value, name];
+                        }}
+                    />
                     <Legend iconType="plainline" wrapperStyle={{paddingTop: '10px'}} />
                     <Line yAxisId="left" type="monotone" dataKey="pace" stroke="#60a5fa" name="Pace (min/km)" strokeWidth={2} dot={{r:3}} activeDot={{r:6}} />
                     <Line yAxisId="right" type="monotone" dataKey="avgHr" stroke="#f87171" name="Avg HR" strokeWidth={2} connectNulls dot={{r:3}} activeDot={{r:6}} />

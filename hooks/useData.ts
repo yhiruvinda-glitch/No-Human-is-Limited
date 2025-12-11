@@ -52,7 +52,8 @@ export const useData = () => {
   const exportSourceCode = useCallback(() => {
       if (!data) return '';
       // Generates code to copy-paste back into src/data/staticDb.ts
-      return `import { DbSchema } from '../types';\nimport { INITIAL_WORKOUTS, INITIAL_GOALS, INITIAL_PROFILE, SHOE_OPTIONS } from '../constants';\n\n// Generated Static DB State\nexport const STATIC_DB: DbSchema = ${JSON.stringify(data, null, 2)};`;
+      // Using 'as unknown as DbSchema' bypasses strict Enum vs String literal checks in TS
+      return `import { DbSchema } from '../types';\n\n// Generated Static DB State\nexport const STATIC_DB: DbSchema = ${JSON.stringify(data, null, 2)} as unknown as DbSchema;`;
   }, [data]);
 
   return {

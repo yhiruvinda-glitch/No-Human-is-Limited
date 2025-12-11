@@ -41,7 +41,7 @@ export interface Workout {
   splits?: number[]; // Array of split times in seconds
   shoe?: string;
   weather?: string;
-  route?: string; // Used as Venue for races
+  route?: string;
   courseId?: string; // Linked Course ID
   surface?: SurfaceType;
   avgHr?: number;
@@ -145,6 +145,7 @@ export interface RacePrediction {
   predictedSeconds: number;
   predictedTime: string;
   formattedPace: string;
+  source?: string; // The workout or goal used as the basis
 }
 
 export interface AIAnalysis {

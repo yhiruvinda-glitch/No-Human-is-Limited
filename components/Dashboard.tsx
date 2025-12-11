@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { Workout, Goal, WorkoutType, TrainingAlert, UserProfile, Season } from '../types';
-import { TrendingUp, Clock, Zap, Calendar, Activity, Heart, BarChart3, Target, AlertTriangle, Info, Bell, CalendarRange } from 'lucide-react';
+import { TrendingUp, Clock, Zap, Calendar, Activity, Heart, BarChart3, Target, AlertTriangle, Info, Bell, CalendarRange, Sparkles } from 'lucide-react';
 import { getWeeklyCoachInsights, getDailyGuidance } from '../services/geminiService';
 import { generateRacePredictions, getGoalProgressPrediction } from '../utils/prediction';
-import { parseTimeStringToSeconds, formatSecondsToTime } from '../utils/analytics';
+import { parseTimeStringToSeconds, formatSecondsToTime, parseDistanceToKm } from '../utils/analytics';
 import { generateSmartAlerts } from '../utils/warnings';
 
 interface DashboardProps {
@@ -12,6 +12,48 @@ interface DashboardProps {
   profile: UserProfile;
   currentSeason?: Season;
 }
+
+// --- Text Formatter for AI Responses ---
+export const FormatAIResponse: React.FC<{ text: string }> = ({ text }) => {
+    // 1. Split bold segments (**text**)
+    const parseBold = (str: string) => {
+        const parts = str.split(/(\*\*.*?\*\*)/g);
+        return parts.map((part, index) => {
+            if (part.startsWith('**') && part.endsWith('**')) {
+                return <strong key={index} className="text-white font-bold">{part.slice(2, -2)}</strong>;
+            }
+            return part;
+        });
+    };
+
+    return (
+        <div className="space-y-3">
+            {text.split('\n').map((line, i) => {
+                const trimmed = line.trim();
+                if (!trimmed) return null;
+
+                // Handle Headers (simple detection)
+                if (trimmed.startsWith('## ') || trimmed.startsWith('### ')) {
+                    return <h4 key={i} className="text-brand-100 font-bold mt-2 uppercase text-xs tracking-wider">{trimmed.replace(/^#+ /, '')}</h4>;
+                }
+
+                // Handle List Items
+                if (trimmed.startsWith('* ') || trimmed.startsWith('- ') || trimmed.startsWith('• ')) {
+                    const content = trimmed.replace(/^[\*\-•] /, '');
+                    return (
+                        <div key={i} className="flex items-start space-x-3">
+                            <span className="text-brand-500 mt-1.5 text-[10px] shrink-0">●</span>
+                            <span className="text-slate-300 leading-relaxed text-sm">{parseBold(content)}</span>
+                        </div>
+                    );
+                }
+
+                // Standard Paragraph
+                return <p key={i} className="text-slate-300 leading-relaxed text-sm">{parseBold(trimmed)}</p>;
+            })}
+        </div>
+    );
+};
 
 const Dashboard: React.FC<DashboardProps> = ({ workouts, goals, profile, currentSeason }) => {
   const [insight, setInsight] = useState<string>('Analyzing your recent training data...');
@@ -251,23 +293,25 @@ const Dashboard: React.FC<DashboardProps> = ({ workouts, goals, profile, current
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* AI Coach Insight */}
-        <div className="lg:col-span-2 bg-slate-800 p-6 rounded-2xl border border-slate-700 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-brand-500/5 rounded-full blur-3xl -mr-10 -mt-10"></div>
-            <h3 className="text-xl font-bold text-white mb-4 flex items-center">
-                <span className="bg-brand-500 text-white text-xs font-black px-2 py-1 rounded mr-3">AI COACH</span>
-                Weekly Analysis
-            </h3>
-            <div className="prose prose-invert prose-sm max-w-none text-slate-300">
+        <div className="lg:col-span-2 bg-slate-800 rounded-2xl border border-slate-700 relative overflow-hidden flex flex-col">
+            <div className="absolute top-0 right-0 w-48 h-48 bg-brand-500/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
+            
+            <div className="p-6 border-b border-slate-700/50 flex justify-between items-center bg-slate-800/50">
+                <h3 className="text-lg font-bold text-white flex items-center">
+                    <Sparkles className="text-brand-500 mr-2" size={18} /> Coach's Weekly Report
+                </h3>
+                <span className="text-xs font-mono text-slate-500 uppercase">Gemini 3.0 Analysis</span>
+            </div>
+
+            <div className="p-6 flex-1">
                 {loadingInsight ? (
-                    <div className="animate-pulse flex space-x-4">
-                        <div className="flex-1 space-y-4 py-1">
-                            <div className="h-4 bg-slate-700 rounded w-3/4"></div>
-                            <div className="h-4 bg-slate-700 rounded"></div>
-                            <div className="h-4 bg-slate-700 rounded w-5/6"></div>
-                        </div>
+                    <div className="animate-pulse space-y-4">
+                        <div className="h-4 bg-slate-700 rounded w-3/4"></div>
+                        <div className="h-4 bg-slate-700 rounded"></div>
+                        <div className="h-4 bg-slate-700 rounded w-5/6"></div>
                     </div>
                 ) : (
-                    <div className="whitespace-pre-line leading-relaxed font-medium">{insight}</div>
+                    <FormatAIResponse text={insight} />
                 )}
             </div>
         </div>
@@ -307,7 +351,8 @@ const Dashboard: React.FC<DashboardProps> = ({ workouts, goals, profile, current
             id: pb.distance,
             name: pb.distance,
             targetTime: pb.time,
-            targetDistance: parseFloat(pb.distance) || 0, // Approx
+            // FIX: Ensure "5000m" is parsed to 5 km, not 5000 km.
+            targetDistance: parseDistanceToKm(pb.distance), 
             currentBest: currentSeason.startPbs.find(s => s.distance === pb.distance)?.time || '-',
             baseline: currentSeason.startPbs.find(s => s.distance === pb.distance)?.time || '-'
         })) : goals).map(goal => {
@@ -354,10 +399,14 @@ const Dashboard: React.FC<DashboardProps> = ({ workouts, goals, profile, current
                     </div>
                     
                     <div className="mt-3 flex justify-between items-center text-xs">
-                        <div className="text-slate-400">
-                           Predicted: <span className={`font-mono font-bold ${currentSec <= targetSec ? 'text-brand-500' : 'text-slate-200'}`}>
+                        <div className="text-slate-400 flex flex-col">
+                           <span>Predicted: <span className={`font-mono font-bold ${currentSec <= targetSec ? 'text-brand-500' : 'text-slate-200'}`}>
                                     {pred ? pred.predictedTime : goal.currentBest}
                                 </span>
+                           </span>
+                           {pred?.source && (
+                                <span className="text-[10px] text-slate-500 mt-0.5">Based on: {pred.source}</span>
+                           )}
                         </div>
                         <div className="font-mono text-brand-500 font-bold">
                              {Math.round(progress)}%

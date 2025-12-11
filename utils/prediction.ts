@@ -1,5 +1,3 @@
-
-
 import { Workout, Goal, WorkoutType, RacePrediction } from '../types';
 import { parseTimeStringToSeconds, formatSecondsToTime } from './analytics';
 
@@ -12,9 +10,18 @@ const DISTANCES = [
   { name: 'Half Marathon', km: 21.0975 }
 ];
 
-// Riegel Formula: t2 = t1 * (d2 / d1)^1.06
+// Riegel Formula with Dynamic Fatigue Factor
+// t2 = t1 * (d2 / d1)^exponent
 const predictTime = (baseSeconds: number, baseKm: number, targetKm: number): number => {
-  return baseSeconds * Math.pow((targetKm / baseKm), 1.06);
+  let exponent = 1.08; // Default conservative decay (Standard Riegel is 1.06)
+
+  // Penalty for extrapolating short anaerobic efforts to long aerobic distances
+  // If source is short (< 4km) and target is significantly longer
+  if (baseKm < 4 && targetKm > baseKm) {
+      exponent = 1.12; 
+  }
+
+  return baseSeconds * Math.pow((targetKm / baseKm), exponent);
 };
 
 // Calculate VDOT (Approximation)
@@ -34,33 +41,75 @@ export const getBestPerformance = (workouts: Workout[], goals: Goal[]): { second
 
     goals.forEach(g => {
         const sec = parseTimeStringToSeconds(g.currentBest);
-        const speed = g.targetDistance / sec; 
-        if (speed > bestPerf.score) {
-            bestPerf = { seconds: sec, km: g.targetDistance, score: speed, source: 'Manual Goal' };
+        // Score is speed (km/s) roughly, or just compare 5k normalized time
+        if (sec > 0 && g.targetDistance > 0) {
+             const pred5k = predictTime(sec, g.targetDistance, 5);
+             const speedScore = 5 / pred5k; // Higher is better
+             if (speedScore > bestPerf.score) {
+                 bestPerf = { seconds: sec, km: g.targetDistance, score: speedScore, source: 'Manual Goal' };
+             }
         }
     });
 
-    // 2. Scan Workouts for Races or Time Trials (Last 90 Days)
+    // 2. Scan Workouts for Races or Quality Sessions (Last 90 Days)
     const ninetyDaysAgo = new Date();
     ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
 
+    // RESTRICTED PREDICTION TYPES
+    // We strictly exclude Intervals/Speed/Hills as rest periods artificially inflate predictive capability.
+    // Only continuous or long-rep aerobic work (Threshold/Tempo) or Races are allowed.
+    const PREDICTION_TYPES = [
+        WorkoutType.RACE,
+        WorkoutType.TEMPO,
+        WorkoutType.THRESHOLD
+    ];
+
     workouts.forEach(w => {
-        if (new Date(w.date) >= ninetyDaysAgo && (w.type === WorkoutType.RACE || (w.type === WorkoutType.TEMPO && w.rpe >= 9))) {
-             const durationSec = w.duration * 60;
-             if (durationSec === 0 || w.distance === 0) return;
-             
-             const speed = w.distance / durationSec;
-             
-             // Normalize existing best to 5k speed for fair comparison
-             const pred5kCurrent = bestPerf.km ? predictTime(bestPerf.seconds, bestPerf.km, 5) : 99999;
-             const speed5kCurrent = 5 / pred5kCurrent;
+        if (!PREDICTION_TYPES.includes(w.type)) return;
+        if (new Date(w.date) < ninetyDaysAgo) return;
+        
+        // RPE Filter for non-races
+        if (w.type !== WorkoutType.RACE && (!w.rpe || w.rpe < 7)) return;
 
-             const pred5kNew = predictTime(durationSec, w.distance, 5);
-             const speed5kNew = 5 / pred5kNew;
+        let durationSec = 0;
+        let distanceKm = 0;
 
-             if (speed5kNew > speed5kCurrent) {
-                 bestPerf = { seconds: durationSec, km: w.distance, score: speed, source: `Log: ${w.date.split('T')[0]}` };
-             }
+        // Smart Extraction: "Active Work" only.
+        if (w.intervals && w.intervals.length > 0) {
+             w.intervals.forEach(i => {
+                 const d = Number(i.distance) || 0;
+                 const t = parseTimeStringToSeconds(String(i.duration));
+                 const reps = i.reps || 1;
+                 if (d > 0 && t > 0) {
+                     distanceKm += (d * reps) / 1000;
+                     durationSec += (t * reps);
+                 }
+             });
+        }
+        
+        // Fallback or if intervals empty (Continuous Tempo/Threshold/Race)
+        if (distanceKm === 0 || durationSec === 0) {
+            distanceKm = w.distance;
+            durationSec = w.duration * 60;
+        }
+
+        if (distanceKm <= 0 || durationSec <= 0) return;
+
+        // INCREASED GUARD: Minimum 3km volume (was 2km)
+        // Ensures only substantial aerobic efforts predict race times
+        if (w.type !== WorkoutType.RACE && distanceKm < 3) return;
+
+        // Normalize to 5k
+        const pred5k = predictTime(durationSec, distanceKm, 5);
+        const speedScore = 5 / pred5k;
+
+        if (speedScore > bestPerf.score) {
+            bestPerf = {
+                seconds: durationSec,
+                km: distanceKm,
+                score: speedScore,
+                source: `Log: ${w.title || w.type} (${new Date(w.date).toLocaleDateString(undefined, {month:'short', day:'numeric'})})`
+            };
         }
     });
 
@@ -80,7 +129,8 @@ export const generateRacePredictions = (workouts: Workout[], goals: Goal[]): Rac
             distanceKm: d.km,
             predictedSeconds: seconds,
             predictedTime: formatSecondsToTime(seconds),
-            formattedPace: `${Math.floor(paceSec / 60)}:${Math.round(paceSec % 60).toString().padStart(2, '0')}/km`
+            formattedPace: `${Math.floor(paceSec / 60)}:${Math.round(paceSec % 60).toString().padStart(2, '0')}/km`,
+            source: base.source
         };
     });
 };
@@ -106,7 +156,8 @@ export const getGoalProgressPrediction = (goal: Goal, predictions: RacePredictio
         distanceKm: goal.targetDistance,
         predictedSeconds: seconds,
         predictedTime: formatSecondsToTime(seconds),
-        formattedPace: `${Math.floor(paceSec / 60)}:${Math.round(paceSec % 60).toString().padStart(2, '0')}/km`
+        formattedPace: `${Math.floor(paceSec / 60)}:${Math.round(paceSec % 60).toString().padStart(2, '0')}/km`,
+        source: base.source
     };
 };
 
@@ -118,6 +169,13 @@ export const getFitnessTrend = (workouts: Workout[]) => {
     // For every workout, look at the window of past 42 days (6 weeks) to find "Peak Fitness" at that moment
     const trendPoints: { date: string, predicted5k: number | null }[] = [];
 
+    // Align quality types with prediction engine to ensure graph consistency
+    const QUALITY_TYPES = [
+        WorkoutType.RACE, 
+        WorkoutType.TEMPO, 
+        WorkoutType.THRESHOLD
+    ];
+
     sorted.forEach((w, idx) => {
         const currentDate = new Date(w.date);
         const windowStart = new Date(currentDate);
@@ -126,16 +184,40 @@ export const getFitnessTrend = (workouts: Workout[]) => {
         // Find best performance in window
         const recentWorkouts = sorted.slice(0, idx + 1).filter(rw => 
             new Date(rw.date) >= windowStart && 
-            (rw.type === WorkoutType.RACE || rw.type === WorkoutType.INTERVAL || rw.type === WorkoutType.TEMPO)
+            QUALITY_TYPES.includes(rw.type)
         );
 
         let best5kSeconds: number | null = null;
 
         recentWorkouts.forEach(rw => {
-            const durationSec = rw.duration * 60;
-            if (rw.distance > 0 && durationSec > 0) {
+            let durationSec = 0;
+            let distanceKm = 0;
+
+            // Same extraction logic as getBestPerformance
+            if (rw.intervals && rw.intervals.length > 0) {
+                 rw.intervals.forEach(i => {
+                     const d = Number(i.distance) || 0;
+                     const t = parseTimeStringToSeconds(String(i.duration));
+                     const r = i.reps || 1;
+                     if (d > 0 && t > 0) {
+                         distanceKm += (d * r) / 1000;
+                         durationSec += (t * r);
+                     }
+                 });
+            }
+
+            // Fallback
+            if (distanceKm === 0 || durationSec === 0) {
+                 distanceKm = rw.distance;
+                 durationSec = rw.duration * 60;
+            }
+
+            if (distanceKm > 0 && durationSec > 0) {
+                // Apply strict 3km rule for trend as well
+                if (rw.type !== WorkoutType.RACE && distanceKm < 3) return;
+
                 // Riegel to 5k
-                const pred = predictTime(durationSec, rw.distance, 5);
+                const pred = predictTime(durationSec, distanceKm, 5);
                 // We want the lowest time (fastest)
                 if (best5kSeconds === null || pred < best5kSeconds) {
                     best5kSeconds = pred;

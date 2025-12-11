@@ -368,6 +368,11 @@ const WorkoutList: React.FC<WorkoutListProps> = ({ workouts, goals, courses, onD
                                                 Personal Best
                                             </span>
                                          )}
+                                         {workout.isSb && (
+                                            <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-red-500/20 text-red-500 border border-red-500/30">
+                                                Season Best
+                                            </span>
+                                         )}
                                      </div>
                                 </div>
                             </div>

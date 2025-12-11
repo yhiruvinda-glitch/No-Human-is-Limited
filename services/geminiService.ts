@@ -1,4 +1,3 @@
-
 import { GoogleGenAI } from "@google/genai";
 import { Workout, Goal, UserProfile } from '../types';
 import { SYSTEM_INSTRUCTION_COACH } from '../constants';
@@ -40,7 +39,7 @@ export const analyzeWorkoutLog = async (workout: Workout, profile?: UserProfile)
     `;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3-pro-preview',
       contents: prompt,
       config: {
         systemInstruction: SYSTEM_INSTRUCTION_COACH,
@@ -75,9 +74,8 @@ export const getWeeklyCoachInsights = async (workouts: Workout[], profile?: User
       Format response as a concise bulleted list of 3 Key Insights and 1 Actionable Tip for next week.
     `;
 
-    // Switched to 'gemini-2.5-flash' to reduce quota usage (was gemini-3-pro-preview)
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash', 
+      model: 'gemini-3-pro-preview', 
       contents: prompt,
       config: {
         systemInstruction: SYSTEM_INSTRUCTION_COACH,
@@ -119,7 +117,7 @@ export const getDailyGuidance = async (workouts: Workout[], goals: Goal[], profi
         `;
 
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
+            model: 'gemini-3-pro-preview',
             contents: prompt,
             config: {
                 responseMimeType: 'application/json',
@@ -166,7 +164,7 @@ export const compareWorkouts = async (w1: Workout, w2: Workout): Promise<string>
         `;
 
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
+            model: 'gemini-3-pro-preview',
             contents: prompt,
             config: { systemInstruction: SYSTEM_INSTRUCTION_COACH }
         });
@@ -191,7 +189,7 @@ export const chatWithCoach = async (message: string, contextWorkouts: Workout[],
         `;
 
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
+            model: 'gemini-3-pro-preview',
             contents: prompt,
             config: {
                 systemInstruction: SYSTEM_INSTRUCTION_COACH,

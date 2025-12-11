@@ -12,7 +12,7 @@ import ShoeDepository from './components/ShoeDepository';
 import Races from './components/Races';
 import { ViewState, Workout, Goal, UserProfile, Course, WorkoutType, Season, PersonalBest, Shoe } from './types';
 import { useData } from './hooks/useData';
-import { formatSecondsToTime, detectBestEfforts, calculateSeasonBests } from './utils/analytics';
+import { formatSecondsToTime, detectBestEfforts, calculateSeasonBests, parseTimeStringToSeconds, recalculateRecords } from './utils/analytics';
 import { Loader2 } from 'lucide-react';
 
 const App: React.FC = () => {
@@ -63,6 +63,12 @@ const App: React.FC = () => {
       save({ ...data, seasons: finalSeasons });
       showToast(`Started Season: ${name}`);
       setView('DASHBOARD');
+  };
+
+  const handleUpdateSeason = (updatedSeason: Season) => {
+      const updatedSeasons = seasons.map(s => s.id === updatedSeason.id ? updatedSeason : s);
+      save({ ...data, seasons: updatedSeasons });
+      showToast('Season Updated');
   };
 
   const handleEndSeason = () => {
@@ -131,33 +137,64 @@ const App: React.FC = () => {
     // 1. Check for Course Record
     if (finalWorkout.courseId) {
         const course = courses.find(c => c.id === finalWorkout.courseId);
-        // Only trigger record if distance matches within 200m (GPS drift tolerance)
-        const isDistanceMatch = course && Math.abs(course.distance - finalWorkout.distance) < 0.2;
         
-        if (course && isDistanceMatch) {
-            const workoutSeconds = finalWorkout.duration * 60;
-            const currentRecord = course.bestEffort?.seconds || Infinity;
-            
-            if (workoutSeconds < currentRecord) {
-                // NEW RECORD!
-                const updatedCourse: Course = {
-                    ...course,
-                    bestEffort: {
-                        seconds: workoutSeconds,
-                        formattedTime: formatSecondsToTime(workoutSeconds, true),
-                        date: finalWorkout.date,
-                        workoutId: finalWorkout.id
+        if (course) {
+            let attemptSeconds = Infinity;
+            let isValidAttempt = false;
+
+            // Strategy A: Check Interval Reps (Prioritize for Hills/Intervals/Speed)
+            // Useful if the course represents a segment (e.g. Hill) that is repeated
+            if (finalWorkout.intervals && finalWorkout.intervals.length > 0) {
+                finalWorkout.intervals.forEach(interval => {
+                    const distKm = (interval.distance || 0) / 1000;
+                    // Tolerance: 50m (0.05km) or exact match if user entered it manually
+                    if (distKm > 0 && Math.abs(distKm - course.distance) < 0.05) {
+                        const segSeconds = parseTimeStringToSeconds(interval.duration || '0');
+                        if (segSeconds > 0 && segSeconds < attemptSeconds) {
+                            attemptSeconds = segSeconds;
+                            isValidAttempt = true;
+                        }
                     }
-                };
-                updatedCourses = updatedCourses.map(c => c.id === c.id ? (c.id === updatedCourse.id ? updatedCourse : c) : c);
-                // We update courses in the final save call
-                toastMsg = `🏆 NEW COURSE RECORD: ${course.name}! `;
+                });
+            }
+
+            // Strategy B: Check Total Workout (Fallback or for continuous runs like Tempo/Race)
+            // If the whole workout distance matches the course distance, treat it as an attempt
+            if (!isValidAttempt || workout.type === WorkoutType.TEMPO || workout.type === WorkoutType.RACE || workout.type === WorkoutType.EASY) {
+                 // Tolerance: 200m (0.2km) for total distance drift
+                 if (Math.abs(course.distance - finalWorkout.distance) < 0.2) {
+                     const totalSeconds = finalWorkout.duration * 60;
+                     // Only replace if it's faster than what we found in intervals (unlikely but safe)
+                     if (totalSeconds < attemptSeconds) {
+                         attemptSeconds = totalSeconds;
+                         isValidAttempt = true;
+                     }
+                 }
+            }
+            
+            if (isValidAttempt) {
+                const currentRecord = course.bestEffort?.seconds || Infinity;
+                
+                if (attemptSeconds < currentRecord) {
+                    // NEW RECORD!
+                    const updatedCourse: Course = {
+                        ...course,
+                        bestEffort: {
+                            seconds: attemptSeconds,
+                            formattedTime: formatSecondsToTime(attemptSeconds, true),
+                            date: finalWorkout.date,
+                            workoutId: finalWorkout.id
+                        }
+                    };
+                    updatedCourses = updatedCourses.map(c => c.id === c.id ? (c.id === updatedCourse.id ? updatedCourse : c) : c);
+                    toastMsg = `🏆 NEW COURSE RECORD: ${course.name}! `;
+                }
             }
         }
     }
 
-    // 2. Check for Personal Best (PB) & Season Best (SB)
-    // Pass currentSeason.startDate if available to calculate SBs correctly
+    // 2. Check for Personal Best (PB) & Season Best (SB) - FOR TOAST & PROFILE UPDATE ONLY
+    // We use recalculateRecords later for the actual flags on the list
     const { isPb, isSb, distanceName } = detectBestEfforts(
         finalWorkout, 
         workouts, 
@@ -166,9 +203,7 @@ const App: React.FC = () => {
     );
     
     if (isPb && distanceName) {
-        finalWorkout.isPb = true;
         toastMsg = `🎉 NEW ${distanceName} PB! `;
-        
         // Update Profile PBs
         const newPbStr = formatSecondsToTime(finalWorkout.duration * 60, true);
         const existingPbIndex = currentProfile.pbs.findIndex(p => p.distance === distanceName || (distanceName === '5K' && p.distance === '5000m') || (distanceName === '10K' && p.distance === '10000m'));
@@ -178,18 +213,18 @@ const App: React.FC = () => {
         } else {
             currentProfile.pbs.push({ distance: distanceName, time: newPbStr, date: finalWorkout.date });
         }
-        // Profile updated in local variable, will be saved at end
-
     } else if (isSb && distanceName) {
-        finalWorkout.isSb = true;
         toastMsg = `🔥 NEW ${distanceName} SEASON BEST! `;
     }
 
     // Show Accumulated Toast
     if (toastMsg) showToast(toastMsg);
 
-    const updatedWorkouts = [finalWorkout, ...workouts];
+    const rawWorkouts = [finalWorkout, ...workouts];
     
+    // 3. Recalculate ALL Records to ensure old tags are removed if beaten
+    const updatedWorkouts = recalculateRecords(rawWorkouts, currentSeason?.startDate);
+
     // Save everything at once using the hook
     save({
         ...data,
@@ -207,7 +242,7 @@ const App: React.FC = () => {
 
   const handleDeleteWorkout = (id: string) => {
     // 1. Remove from workouts
-    const updatedWorkouts = workouts.filter(w => w.id !== id);
+    const remainingWorkouts = workouts.filter(w => w.id !== id);
 
     // 2. Clean up Course Records if this workout was a record
     const updatedCourses = courses.map(c => {
@@ -217,9 +252,12 @@ const App: React.FC = () => {
         return c;
     });
 
+    // 3. Recalculate Records (A deleted PB might restore an old PB)
+    const finalWorkouts = recalculateRecords(remainingWorkouts, currentSeason?.startDate);
+
     save({
         ...data,
-        workouts: updatedWorkouts,
+        workouts: finalWorkouts,
         courses: updatedCourses
     });
     
@@ -265,7 +303,15 @@ const App: React.FC = () => {
       case 'PROFILE':
         return <Profile profile={profile} onSave={handleSaveProfile} onGenerateSourceCode={exportSourceCode} />;
       case 'SEASONS':
-        return <Seasons currentSeason={currentSeason} pastSeasons={pastSeasons} onStartSeason={handleStartSeason} onEndSeason={handleEndSeason} workouts={workouts} goals={goals} />;
+        return <Seasons 
+                  currentSeason={currentSeason} 
+                  pastSeasons={pastSeasons} 
+                  onStartSeason={handleStartSeason} 
+                  onEndSeason={handleEndSeason} 
+                  onUpdateSeason={handleUpdateSeason}
+                  workouts={workouts} 
+                  goals={goals} 
+               />;
       default:
         return <Dashboard workouts={workouts} goals={goals} profile={profile} />;
     }

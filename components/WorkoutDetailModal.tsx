@@ -10,10 +10,12 @@ interface WorkoutDetailModalProps {
 }
 
 const WorkoutDetailModal: React.FC<WorkoutDetailModalProps> = ({ workout, goals, onClose }) => {
-    const isTempo = workout.type === WorkoutType.TEMPO;
+    // Show splits table for Tempo and Race
+    const showSplits = workout.type === WorkoutType.TEMPO || workout.type === WorkoutType.RACE;
+    
     const analysis = analyzeIntervalSession(workout, goals);
     
-    // Determine if we should show VAR/Score (Only for specific types, NOT for Tempo)
+    // Determine if we should show VAR/Score (Only for specific types, NOT for Tempo/Race)
     const showVar = [WorkoutType.INTERVAL, WorkoutType.SPEED, WorkoutType.THRESHOLD, WorkoutType.HILLS].includes(workout.type);
 
     return (
@@ -100,8 +102,8 @@ const WorkoutDetailModal: React.FC<WorkoutDetailModalProps> = ({ workout, goals,
                          </div>
                     </div>
 
-                    {/* TEMPO SPLIT VIEW */}
-                    {isTempo && workout.intervals && workout.intervals.length > 0 && (
+                    {/* SPLIT VIEW (Tempo or Race) */}
+                    {showSplits && workout.intervals && workout.intervals.length > 0 && (
                         <div className="space-y-4">
                             <h4 className="text-sm font-bold text-slate-400 uppercase tracking-widest flex items-center">
                                 <Timer size={16} className="mr-2" /> Splits Analysis
@@ -187,8 +189,8 @@ const WorkoutDetailModal: React.FC<WorkoutDetailModalProps> = ({ workout, goals,
                         </div>
                     )}
 
-                    {/* STANDARD INTERVAL ANALYSIS (Intervals, Speed, Hills) */}
-                    {!isTempo && analysis && (
+                    {/* STANDARD INTERVAL ANALYSIS (Intervals, Speed, Hills) - NOT for Tempo/Race */}
+                    {!showSplits && analysis && (
                         <div className="space-y-4">
                             <h4 className="text-sm font-bold text-slate-400 uppercase tracking-widest flex items-center">
                                 <BarChart2 size={16} className="mr-2" /> Session Analysis

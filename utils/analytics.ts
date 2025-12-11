@@ -4,6 +4,7 @@ import { Workout, Goal, IntervalAnalysis, UserProfile, PersonalBest, WorkoutType
 
 // Helper: Parse "MM:SS" or "SS" or "M:SS.ms" into seconds
 export const parseTimeStringToSeconds = (timeStr: string): number => {
+    if (!timeStr) return 0;
     // Remove clean up
     const cleanStr = timeStr.trim().replace(/[^\d:.]/g, '');
     
@@ -271,6 +272,43 @@ export const STANDARD_DISTANCES = [
     { name: 'Half Marathon', km: 21.0975 },
 ];
 
+// Robust distance string to KM parser
+export const parseDistanceToKm = (distStr: string): number => {
+    if (!distStr) return 0;
+    
+    const clean = distStr.toLowerCase().trim();
+    
+    // Check known aliases
+    if (clean === 'hm' || clean.includes('half')) return 21.0975;
+    if (clean === 'fm' || clean === 'marathon') return 42.195;
+    if (clean === '5k') return 5;
+    if (clean === '10k') return 10;
+
+    // Check standard distances list
+    const std = STANDARD_DISTANCES.find(d => d.name.toLowerCase() === clean);
+    if (std) return std.km;
+
+    // Extract number
+    const num = parseFloat(clean.replace(/[^\d.]/g, ''));
+    if (isNaN(num)) return 0;
+
+    // Heuristics
+    // If unit contains 'km' or 'k', return number
+    if (clean.includes('km')) return num;
+    if (clean.endsWith('k') && !clean.includes('c')) return num; // 10k but not "track"
+
+    // If unit contains 'm' but not 'km', assume meters
+    if (clean.includes('m') && !clean.includes('km') && !clean.includes('mi')) {
+        return num / 1000;
+    }
+
+    // Fallback: If number is > 100, assume meters (e.g. 5000 -> 5km)
+    if (num >= 100) return num / 1000;
+    
+    // Default assume KM
+    return num;
+};
+
 // STRICT LIST of distances eligible for PROFILE PBs
 const PB_ELIGIBLE_NAMES = ['1500m', '3000m', '5000m', '5K', '10K', '10000m', '10km', 'Half Marathon', 'Marathon'];
 
@@ -330,6 +368,66 @@ const getSegmentsFromWorkout = (workout: Workout): PerformanceSegment[] => {
     }
 
     return segments;
+};
+
+// Recalculate PB and SB flags for entire history
+export const recalculateRecords = (allWorkouts: Workout[], seasonStartDate?: string): Workout[] => {
+    // 1. Reset all flags
+    const resetWorkouts = allWorkouts.map(w => ({ ...w, isPb: false, isSb: false }));
+
+    // 2. Identify Global PBs
+    const pbBests: Record<string, { time: number, workoutId: string }> = {};
+
+    resetWorkouts.forEach(w => {
+        const segments = getSegmentsFromWorkout(w);
+        segments.forEach(seg => {
+            // Check against PB eligible distances
+            const match = STANDARD_DISTANCES.find(sd => {
+                 const tol = sd.km < 3 ? 0.03 : 0.1; 
+                 return Math.abs(seg.distanceKm - sd.km) <= tol;
+            });
+
+            if (match && PB_ELIGIBLE_NAMES.includes(match.name)) {
+                const sec = seg.durationMin * 60;
+                if (!pbBests[match.name] || sec < pbBests[match.name].time) {
+                    pbBests[match.name] = { time: sec, workoutId: w.id };
+                }
+            }
+        });
+    });
+
+    // 3. Identify Season Bests
+    const sbBests: Record<string, { time: number, workoutId: string }> = {};
+    const seasonStart = seasonStartDate ? new Date(seasonStartDate) : new Date(new Date().getFullYear(), 0, 1);
+
+    resetWorkouts.forEach(w => {
+        if (new Date(w.date) < seasonStart) return;
+
+        const segments = getSegmentsFromWorkout(w);
+        segments.forEach(seg => {
+            const match = STANDARD_DISTANCES.find(sd => {
+                 const tol = sd.km < 3 ? 0.03 : 0.1; 
+                 return Math.abs(seg.distanceKm - sd.km) <= tol;
+            });
+
+            if (match) {
+                const sec = seg.durationMin * 60;
+                if (!sbBests[match.name] || sec < sbBests[match.name].time) {
+                    sbBests[match.name] = { time: sec, workoutId: w.id };
+                }
+            }
+        });
+    });
+
+    // 4. Apply flags
+    const pbWorkoutIds = new Set(Object.values(pbBests).map(v => v.workoutId));
+    const sbWorkoutIds = new Set(Object.values(sbBests).map(v => v.workoutId));
+
+    return resetWorkouts.map(w => ({
+        ...w,
+        isPb: pbWorkoutIds.has(w.id),
+        isSb: sbWorkoutIds.has(w.id)
+    }));
 };
 
 // HELPER: Scan a list of workouts and return ALL bests for standard distances

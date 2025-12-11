@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Season, PersonalBest, Workout, Goal, WorkoutType } from '../types';
-import { Archive, Play, Trophy, Calendar, ChevronDown, ChevronUp, Flame, Target, List, History, Medal, Flag, Zap, Clock, MapPin, Heart } from 'lucide-react';
+import { Archive, Play, Trophy, Calendar, ChevronDown, ChevronUp, Flame, Target, List, History, Medal, Flag, Zap, Clock, MapPin, Heart, Edit2, Save, X, Plus, Trash2 } from 'lucide-react';
 import { calculateSeasonBests, getWorkoutSummary, formatMetric, formatSecondsToTime } from '../utils/analytics';
 import WorkoutDetailModal from './WorkoutDetailModal';
 
@@ -9,6 +9,7 @@ interface SeasonsProps {
     pastSeasons: Season[];
     onStartSeason: (name: string, startDate: string, startPbs: PersonalBest[], targetPbs: PersonalBest[]) => void;
     onEndSeason: () => void;
+    onUpdateSeason: (season: Season) => void;
     workouts: Workout[]; // Needed to calculate end-of-season stats
     goals: Goal[]; // Needed for workout detail analysis
 }
@@ -30,12 +31,17 @@ const FILTER_TABS = [
   { label: 'X-Train', value: WorkoutType.CROSS_TRAINING },
 ];
 
-const Seasons: React.FC<SeasonsProps> = ({ currentSeason, pastSeasons, onStartSeason, onEndSeason, workouts, goals }) => {
+const Seasons: React.FC<SeasonsProps> = ({ currentSeason, pastSeasons, onStartSeason, onEndSeason, onUpdateSeason, workouts, goals }) => {
     const [isStarting, setIsStarting] = useState(false);
     const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'SBS'>('OVERVIEW');
     const [showEndConfirm, setShowEndConfirm] = useState(false);
     const [selectedWorkout, setSelectedWorkout] = useState<Workout | null>(null);
     const [filter, setFilter] = useState('ALL');
+    
+    // Editing State
+    const [isEditing, setIsEditing] = useState(false);
+    const [editStartPbs, setEditStartPbs] = useState<PersonalBest[]>([]);
+    const [editTargetPbs, setEditTargetPbs] = useState<PersonalBest[]>([]);
     
     // Past Season View State
     const [expandedSeasonId, setExpandedSeasonId] = useState<string | null>(null);
@@ -79,6 +85,43 @@ const Seasons: React.FC<SeasonsProps> = ({ currentSeason, pastSeasons, onStartSe
         onStartSeason(newSeasonName, newSeasonDate, sPbs, tPbs);
         setIsStarting(false);
         setNewSeasonName('');
+    };
+
+    const handleEditClick = () => {
+        if (!currentSeason) return;
+        setEditStartPbs([...currentSeason.startPbs]);
+        setEditTargetPbs([...currentSeason.targetPbs]);
+        setIsEditing(true);
+    };
+
+    const handleCancelEdit = () => {
+        setIsEditing(false);
+        setEditStartPbs([]);
+        setEditTargetPbs([]);
+    };
+
+    const handleSaveEdit = () => {
+        if (!currentSeason) return;
+        const updatedSeason = {
+            ...currentSeason,
+            startPbs: editStartPbs.filter(pb => pb.distance && pb.time),
+            targetPbs: editTargetPbs.filter(pb => pb.distance && pb.time)
+        };
+        onUpdateSeason(updatedSeason);
+        setIsEditing(false);
+    };
+
+    const updatePbList = (
+        listSetter: React.Dispatch<React.SetStateAction<PersonalBest[]>>,
+        index: number, 
+        field: keyof PersonalBest, 
+        value: string
+    ) => {
+        listSetter(prev => {
+            const copy = [...prev];
+            copy[index] = { ...copy[index], [field]: value };
+            return copy;
+        });
     };
 
     const toggleAccordion = (id: string) => {
@@ -240,34 +283,90 @@ const Seasons: React.FC<SeasonsProps> = ({ currentSeason, pastSeasons, onStartSe
                     </div>
 
                     {/* Content */}
-                    <div className="p-6">
+                    <div className="p-6 relative">
                         {activeTab === 'OVERVIEW' ? (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in slide-in-from-left-2 duration-300">
-                                <div>
-                                    <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Targets</h4>
-                                    <div className="space-y-2">
-                                        {currentSeason.targetPbs.length === 0 ? <p className="text-sm text-slate-500 italic">No targets set.</p> :
-                                        currentSeason.targetPbs.map((target, idx) => (
-                                            <div key={idx} className="flex justify-between items-center bg-slate-900/50 p-3 rounded-lg border border-slate-700/50">
-                                                <span className="text-sm text-slate-300 font-bold">{target.distance}</span>
-                                                <span className="text-sm font-mono text-brand-400 bg-brand-900/20 px-2 py-0.5 rounded">{target.time}</span>
-                                            </div>
-                                        ))}
+                            <>
+                                {/* Edit Button (Only when not editing) */}
+                                {!isEditing && (
+                                    <div className="absolute top-6 right-6 z-10">
+                                        <button onClick={handleEditClick} className="text-xs flex items-center text-slate-400 hover:text-white bg-slate-900/50 hover:bg-slate-800 px-3 py-1.5 rounded transition border border-slate-700">
+                                            <Edit2 size={12} className="mr-1"/> Edit Goals
+                                        </button>
                                     </div>
-                                </div>
-                                <div>
-                                    <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Start Baseline</h4>
-                                    <div className="space-y-2">
-                                        {currentSeason.startPbs.length === 0 ? <p className="text-sm text-slate-500 italic">No starting data.</p> :
-                                        currentSeason.startPbs.map((pb, idx) => (
-                                            <div key={idx} className="flex justify-between items-center bg-slate-900/50 p-3 rounded-lg border border-slate-700/50">
-                                                <span className="text-sm text-slate-400">{pb.distance}</span>
-                                                <span className="text-sm font-mono text-slate-500">{pb.time}</span>
+                                )}
+
+                                {isEditing ? (
+                                    <div className="animate-in fade-in space-y-6">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                            {/* Edit Targets */}
+                                            <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-700/50">
+                                                <h4 className="text-xs font-bold text-brand-400 uppercase tracking-widest mb-3 flex items-center">
+                                                    <Target size={14} className="mr-1"/> Edit Targets
+                                                </h4>
+                                                <div className="space-y-2">
+                                                    {editTargetPbs.map((pb, i) => (
+                                                        <div key={i} className="flex gap-2 items-center">
+                                                            <input value={pb.distance} onChange={(e) => updatePbList(setEditTargetPbs, i, 'distance', e.target.value)} className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-sm text-white focus:border-brand-500 outline-none" placeholder="e.g. 5000m"/>
+                                                            <input value={pb.time} onChange={(e) => updatePbList(setEditTargetPbs, i, 'time', e.target.value)} className="w-28 bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-sm text-white font-mono focus:border-brand-500 outline-none" placeholder="15:00"/>
+                                                            <button onClick={() => setEditTargetPbs(prev => prev.filter((_, idx) => idx !== i))} className="p-1.5 text-slate-500 hover:text-red-400 hover:bg-slate-800 rounded transition"><Trash2 size={14}/></button>
+                                                        </div>
+                                                    ))}
+                                                    <button onClick={() => setEditTargetPbs(prev => [...prev, {distance:'', time:''}])} className="text-xs flex items-center text-brand-400 hover:text-brand-300 mt-2 font-medium px-1 py-1"><Plus size={14} className="mr-1"/> Add Target</button>
+                                                </div>
                                             </div>
-                                        ))}
+                                            {/* Edit Baseline */}
+                                            <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-700/50">
+                                                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center">
+                                                    <History size={14} className="mr-1"/> Edit Baseline
+                                                </h4>
+                                                <div className="space-y-2">
+                                                    {editStartPbs.map((pb, i) => (
+                                                        <div key={i} className="flex gap-2 items-center">
+                                                            <input value={pb.distance} onChange={(e) => updatePbList(setEditStartPbs, i, 'distance', e.target.value)} className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-sm text-white focus:border-slate-500 outline-none" placeholder="e.g. 5000m"/>
+                                                            <input value={pb.time} onChange={(e) => updatePbList(setEditStartPbs, i, 'time', e.target.value)} className="w-28 bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-sm text-white font-mono focus:border-slate-500 outline-none" placeholder="15:30"/>
+                                                            <button onClick={() => setEditStartPbs(prev => prev.filter((_, idx) => idx !== i))} className="p-1.5 text-slate-500 hover:text-red-400 hover:bg-slate-800 rounded transition"><Trash2 size={14}/></button>
+                                                        </div>
+                                                    ))}
+                                                    <button onClick={() => setEditStartPbs(prev => [...prev, {distance:'', time:''}])} className="text-xs flex items-center text-slate-400 hover:text-slate-300 mt-2 font-medium px-1 py-1"><Plus size={14} className="mr-1"/> Add Baseline</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="flex justify-end gap-3 border-t border-brand-500/20 pt-4">
+                                            <button onClick={handleCancelEdit} className="px-4 py-2 text-sm text-slate-400 hover:text-white hover:bg-slate-800 rounded transition">Cancel</button>
+                                            <button onClick={handleSaveEdit} className="bg-brand-600 hover:bg-brand-500 text-white px-6 py-2 rounded text-sm font-bold shadow-lg shadow-brand-900/20 transition flex items-center">
+                                                <Save size={16} className="mr-2"/> Save Changes
+                                            </button>
+                                        </div>
                                     </div>
-                                </div>
-                            </div>
+                                ) : (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in slide-in-from-left-2 duration-300">
+                                        <div>
+                                            <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Targets</h4>
+                                            <div className="space-y-2">
+                                                {currentSeason.targetPbs.length === 0 ? <p className="text-sm text-slate-500 italic">No targets set.</p> :
+                                                currentSeason.targetPbs.map((target, idx) => (
+                                                    <div key={idx} className="flex justify-between items-center bg-slate-900/50 p-3 rounded-lg border border-slate-700/50">
+                                                        <span className="text-sm text-slate-300 font-bold">{target.distance}</span>
+                                                        <span className="text-sm font-mono text-brand-400 bg-brand-900/20 px-2 py-0.5 rounded">{target.time}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Start Baseline</h4>
+                                            <div className="space-y-2">
+                                                {currentSeason.startPbs.length === 0 ? <p className="text-sm text-slate-500 italic">No starting data.</p> :
+                                                currentSeason.startPbs.map((pb, idx) => (
+                                                    <div key={idx} className="flex justify-between items-center bg-slate-900/50 p-3 rounded-lg border border-slate-700/50">
+                                                        <span className="text-sm text-slate-400">{pb.distance}</span>
+                                                        <span className="text-sm font-mono text-slate-500">{pb.time}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </>
                         ) : (
                             <div className="animate-in fade-in slide-in-from-right-2 duration-300">
                                 <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Current Season Bests</h4>
@@ -709,7 +808,7 @@ const Seasons: React.FC<SeasonsProps> = ({ currentSeason, pastSeasons, onStartSe
                                                         <div className="text-xl font-bold text-white">{raceStats.podiums}</div>
                                                     </div>
                                                     <div className="bg-slate-800 p-3 rounded-lg border border-slate-700 flex flex-col items-center justify-center">
-                                                        <div className="flex items-center text-xs text-blue-400 font-bold uppercase mb-1">
+                                                        <div className="flex items-center text-blue-400 font-bold uppercase mb-1">
                                                             <Flag size={12} className="mr-1" /> Top 10
                                                         </div>
                                                         <div className="text-xl font-bold text-white">{raceStats.top10}</div>
