@@ -19,6 +19,27 @@ const App: React.FC = () => {
   const { data, save, exportSourceCode } = useData();
   const [view, setView] = useState<ViewState>('DASHBOARD');
   const [toast, setToast] = useState<string | null>(null);
+  const [hasInitialized, setHasInitialized] = useState(false);
+
+  // Initialize Data Correction on Mount
+  useEffect(() => {
+      if (data && !hasInitialized) {
+          // Perform a one-time calculation to ensure all PB tags are consistent with current profile PBs.
+          // This fixes issues where existing logs might be flagged as PBs despite a faster manual PB being present.
+          const currentSeason = data.seasons.find(s => s.isActive);
+          const cleanedWorkouts = recalculateRecords(data.workouts, currentSeason?.startDate, data.profile.pbs);
+          
+          setHasInitialized(true); 
+          
+          // Check if we effectively changed anything (by comparing PB flags)
+          const needsUpdate = JSON.stringify(data.workouts.map(w => w.isPb)) !== JSON.stringify(cleanedWorkouts.map(w => w.isPb));
+          
+          if (needsUpdate) {
+             save({ ...data, workouts: cleanedWorkouts });
+             console.log("System: Recalculated PBs based on updated profile data.");
+          }
+      }
+  }, [data, hasInitialized, save]);
 
   // While data is loading from hook
   if (!data) {
@@ -223,7 +244,8 @@ const App: React.FC = () => {
     const rawWorkouts = [finalWorkout, ...workouts];
     
     // 3. Recalculate ALL Records to ensure old tags are removed if beaten
-    const updatedWorkouts = recalculateRecords(rawWorkouts, currentSeason?.startDate);
+    // CRITICAL FIX: Pass current profile PBs so historical PBs (not in logs) are respected
+    const updatedWorkouts = recalculateRecords(rawWorkouts, currentSeason?.startDate, currentProfile.pbs);
 
     // Save everything at once using the hook
     save({
@@ -253,7 +275,7 @@ const App: React.FC = () => {
     });
 
     // 3. Recalculate Records (A deleted PB might restore an old PB)
-    const finalWorkouts = recalculateRecords(remainingWorkouts, currentSeason?.startDate);
+    const finalWorkouts = recalculateRecords(remainingWorkouts, currentSeason?.startDate, profile.pbs);
 
     save({
         ...data,

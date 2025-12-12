@@ -538,7 +538,7 @@ const WorkoutForm: React.FC<WorkoutFormProps> = ({ onSave, onCancel, courses = [
                                  formData.intervals.map((rep, idx) => (
                                      <tr key={idx} className="group hover:bg-slate-800/50 transition">
                                          <td className="px-4 py-2 font-mono text-slate-400">{idx + 1}</td>
-                                         {isTrack && <td className="px-4 py-2 font-mono text-slate-400">{(Number(rep.distance || 0) / 400).toFixed(1)}</td>}
+                                         {isTrack && <td className="px-4 py-2 font-mono text-slate-400">{parseFloat((Number(rep.distance || 0) / 400).toFixed(2))}</td>}
                                          <td className="px-4 py-2">
                                              <input 
                                                  type="number" 

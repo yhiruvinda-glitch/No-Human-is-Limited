@@ -90,7 +90,18 @@ const WorkoutList: React.FC<WorkoutListProps> = ({ workouts, goals, courses, onD
           }
 
           // Track stats (for laps)
-          if (w.surface === 'Track' || w.surface === 'Indoor') {
+          // Specifically requested types for lap counting in "All" view + relevant tabs
+          // Added WorkoutType.EASY to include easy runs in lap counts if on track
+          const isQualityTrackType = [
+              WorkoutType.TEMPO, 
+              WorkoutType.THRESHOLD, 
+              WorkoutType.INTERVAL, 
+              WorkoutType.SPEED, 
+              WorkoutType.RACE,
+              WorkoutType.EASY
+          ].includes(w.type);
+          
+          if ((w.surface === 'Track' || w.surface === 'Indoor') && isQualityTrackType) {
               trackDist += w.distance;
               if (w.distance > 0) {
                   trackDur += w.duration;
@@ -156,6 +167,9 @@ const WorkoutList: React.FC<WorkoutListProps> = ({ workouts, goals, courses, onD
                <MetricCard label="Total Dist" value={stats.dist.toFixed(1)} unit="km" />
                <MetricCard label="Duration" value={Math.floor(stats.dur / 60) + 'h ' + Math.round(stats.dur % 60) + 'm'} />
                <MetricCard label="Avg Pace" value={stats.avgPace} unit="/km" />
+               {stats.trackLaps > 0 && (
+                 <MetricCard label="Total Laps" value={Number(stats.trackLaps.toFixed(1))} />
+               )}
                <MetricCard label="Activities" value={stats.count} />
           </div>
       );

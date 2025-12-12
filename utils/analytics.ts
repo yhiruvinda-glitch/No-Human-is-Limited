@@ -1,5 +1,3 @@
-
-
 import { Workout, Goal, IntervalAnalysis, UserProfile, PersonalBest, WorkoutType, IntervalGroupStats } from '../types';
 
 // Helper: Parse "MM:SS" or "SS" or "M:SS.ms" into seconds
@@ -371,12 +369,31 @@ const getSegmentsFromWorkout = (workout: Workout): PerformanceSegment[] => {
 };
 
 // Recalculate PB and SB flags for entire history
-export const recalculateRecords = (allWorkouts: Workout[], seasonStartDate?: string): Workout[] => {
+export const recalculateRecords = (allWorkouts: Workout[], seasonStartDate?: string, profilePbs?: PersonalBest[]): Workout[] => {
     // 1. Reset all flags
     const resetWorkouts = allWorkouts.map(w => ({ ...w, isPb: false, isSb: false }));
 
-    // 2. Identify Global PBs
-    const pbBests: Record<string, { time: number, workoutId: string }> = {};
+    // Helper to find manual PB for a given distance name
+    const getManualPbSeconds = (distName: string): number | null => {
+        if (!profilePbs) return null;
+        
+        // Direct Match
+        let pb = profilePbs.find(p => p.distance === distName);
+        
+        // Aliases
+        if (!pb && distName === '5000m') pb = profilePbs.find(p => p.distance === '5K');
+        if (!pb && distName === '5K') pb = profilePbs.find(p => p.distance === '5000m');
+        if (!pb && distName === '10km') pb = profilePbs.find(p => p.distance === '10K');
+        if (!pb && distName === '10K') pb = profilePbs.find(p => p.distance === '10km');
+        
+        if (pb) {
+            return parseTimeStringToSeconds(pb.time);
+        }
+        return null;
+    };
+
+    // 2. Identify Global PBs from Logs
+    const logBests: Record<string, { time: number, workoutId: string }> = {};
 
     resetWorkouts.forEach(w => {
         const segments = getSegmentsFromWorkout(w);
@@ -389,14 +406,35 @@ export const recalculateRecords = (allWorkouts: Workout[], seasonStartDate?: str
 
             if (match && PB_ELIGIBLE_NAMES.includes(match.name)) {
                 const sec = seg.durationMin * 60;
-                if (!pbBests[match.name] || sec < pbBests[match.name].time) {
-                    pbBests[match.name] = { time: sec, workoutId: w.id };
+                if (!logBests[match.name] || sec < logBests[match.name].time) {
+                    logBests[match.name] = { time: sec, workoutId: w.id };
                 }
             }
         });
     });
 
-    // 3. Identify Season Bests
+    // 3. Filter Log Bests against Manual PBs
+    const validPbWorkoutIds = new Set<string>();
+    
+    Object.entries(logBests).forEach(([distName, bestLog]) => {
+        const manualTime = getManualPbSeconds(distName);
+        
+        // If Manual Time exists and is significantly faster than log time.
+        // We use a tight tolerance of 0.05s to handle floating point noise but respect slight differences.
+        // Example: Manual 17:37.67 (1057.67s). Log 17:38.00 (1058.00s). 
+        // 1058.00 > (1057.67 + 0.05) => 1058.00 > 1057.72 => TRUE.
+        // So the log is slower and NOT a PB.
+        
+        if (manualTime && bestLog.time > (manualTime + 0.05)) {
+            // Manual PB is faster, so no log gets the badge for this distance.
+            return;
+        }
+        
+        // Otherwise, this log is the PB (or equal to manual PB)
+        validPbWorkoutIds.add(bestLog.workoutId);
+    });
+
+    // 4. Identify Season Bests (SBs are always just best in current season logs)
     const sbBests: Record<string, { time: number, workoutId: string }> = {};
     const seasonStart = seasonStartDate ? new Date(seasonStartDate) : new Date(new Date().getFullYear(), 0, 1);
 
@@ -419,14 +457,15 @@ export const recalculateRecords = (allWorkouts: Workout[], seasonStartDate?: str
         });
     });
 
-    // 4. Apply flags
-    const pbWorkoutIds = new Set(Object.values(pbBests).map(v => v.workoutId));
+    // 5. Apply flags
+    // Note: If a workout is a PB, it implies it is also an SB (if in season).
+    // The previous logic for SB tagging was purely based on log history in that season.
     const sbWorkoutIds = new Set(Object.values(sbBests).map(v => v.workoutId));
 
     return resetWorkouts.map(w => ({
         ...w,
-        isPb: pbWorkoutIds.has(w.id),
-        isSb: sbWorkoutIds.has(w.id)
+        isPb: validPbWorkoutIds.has(w.id),
+        isSb: sbWorkoutIds.has(w.id) && !validPbWorkoutIds.has(w.id) // Prioritize PB badge over SB badge visually
     }));
 };
 

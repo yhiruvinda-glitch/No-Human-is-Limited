@@ -680,6 +680,7 @@ const Seasons: React.FC<SeasonsProps> = ({ currentSeason, pastSeasons, onStartSe
                                                             <MetricCard label="Total Dist" value={stats.dist.toFixed(1)} unit="km" />
                                                             <MetricCard label="Duration" value={Math.floor(stats.dur / 60) + 'h ' + Math.round(stats.dur % 60) + 'm'} />
                                                             <MetricCard label="Avg Pace" value={stats.avgPace} unit="/km" />
+                                                            {stats.trackLaps > 0 && <MetricCard label="Track Laps" value={Math.floor(stats.trackLaps)} />}
                                                             <MetricCard label="Activities" value={stats.count} />
                                                         </>
                                                     )}

@@ -5,6 +5,98 @@ export const STATIC_DB: DbSchema = {
   "version": "2024-05-23-initial",
   "workouts": [
     {
+      "id": "1765552776265",
+      "date": "2025-12-12T00:00:00.000Z",
+      "type": "Speed Work",
+      "distance": 1.1,
+      "duration": 3.03,
+      "feeling": 5,
+      "rpe": 5,
+      "trainingLoad": 15,
+      "notes": "Sharpening up the Speed and Neuro Muscular Coordination just before ICA 5K",
+      "intervals": [
+        {
+          "reps": 1,
+          "distance": 100,
+          "duration": "16.37",
+          "recovery": "Walk Back",
+          "pace": "02:43.7"
+        },
+        {
+          "reps": 1,
+          "distance": 100,
+          "duration": "16.65",
+          "recovery": "Walk Back",
+          "pace": "02:46.5"
+        },
+        {
+          "reps": 1,
+          "distance": 100,
+          "duration": "16.50",
+          "recovery": "Walk Back",
+          "pace": "02:45.0"
+        },
+        {
+          "reps": 1,
+          "distance": 100,
+          "duration": "16.03",
+          "recovery": "Walk Back",
+          "pace": "02:40.3"
+        },
+        {
+          "reps": 1,
+          "distance": 100,
+          "duration": "16.22",
+          "recovery": "Walk Back",
+          "pace": "02:42.2"
+        },
+        {
+          "reps": 1,
+          "distance": 200,
+          "duration": "32.56",
+          "recovery": "85s",
+          "pace": "02:42.8"
+        },
+        {
+          "reps": 1,
+          "distance": 200,
+          "duration": "33.80",
+          "recovery": "85s",
+          "pace": "02:49.0"
+        },
+        {
+          "reps": 1,
+          "distance": 200,
+          "duration": "33.50",
+          "recovery": "85s",
+          "pace": "02:47.5"
+        }
+      ],
+      "splits": [
+        16.37,
+        16.65,
+        16.5,
+        16.03,
+        16.22,
+        32.56,
+        33.8,
+        33.5
+      ],
+      "shoe": "Adidas Adizero Evo SL",
+      "route": "UOP",
+      "courseId": "",
+      "surface": "Track",
+      "avgHr": 138,
+      "maxHr": 164,
+      "competition": "",
+      "team": "",
+      "place": "",
+      "eventName": "",
+      "title": "Speed Work 3",
+      "isPb": false,
+      "isSb": true
+    },
+    {
       "id": "1765483323151",
       "date": "2025-12-11T00:00:00.000Z",
       "type": "Speed Work",
@@ -1426,6 +1518,15 @@ export const STATIC_DB: DbSchema = {
       "currentBest": "4:28",
       "baseline": "4:45",
       "deadline": "2024-12-15"
+    },
+    {
+      "id": "1765553015354",
+      "name": "ICA Half Marathon - 5K",
+      "targetDistance": 5.5,
+      "targetTime": "19:00",
+      "currentBest": "00:00",
+      "baseline": "00:00",
+      "deadline": "2025-12-14"
     }
   ],
   "profile": {
@@ -1526,7 +1627,7 @@ export const STATIC_DB: DbSchema = {
         },
         {
           "distance": "10K",
-          "time": "35:52.92"
+          "time": "38:00"
         },
         {
           "distance": "Half Marathon",
@@ -1548,7 +1649,7 @@ export const STATIC_DB: DbSchema = {
         },
         {
           "distance": "10K",
-          "time": "38:00"
+          "time": "35:30"
         },
         {
           "distance": "Half Marathon",
