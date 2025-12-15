@@ -4,18 +4,36 @@ import { SYSTEM_INSTRUCTION_COACH } from '../constants';
 
 // Initialize Gemini Client
 // Note: process.env.API_KEY is assumed to be available.
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// On Vercel, if API_KEY is not set, this might be undefined.
+const apiKey = process.env.API_KEY;
+const ai = new GoogleGenAI({ apiKey: apiKey || '' }); 
 
 const handleGenAIError = (error: any, defaultMsg: string) => {
     console.error("Gemini API Error:", error);
     const msg = error.message || '';
+    
+    // Check for missing/invalid key specifically
+    if (msg.includes('API key not valid') || msg.includes('API_KEY_INVALID') || !apiKey) {
+        return "⚠️ Setup Error: API_KEY is missing or invalid. Please configure it in your Vercel project settings.";
+    }
+
     if (msg.includes('429') || msg.includes('Quota') || msg.includes('RESOURCE_EXHAUSTED')) {
         return "⚠️ AI Limit Reached: Coach is taking a break. Please try again later.";
     }
     return defaultMsg;
 };
 
+const checkApiKey = (): boolean => {
+    if (!apiKey || apiKey.trim() === '' || apiKey.includes('undefined')) {
+        console.warn("API_KEY is missing in environment variables.");
+        return false;
+    }
+    return true;
+}
+
 export const analyzeWorkoutLog = async (workout: Workout, profile?: UserProfile): Promise<string> => {
+  if (!checkApiKey()) return "⚠️ Configuration Error: API_KEY is missing. Please set it in Vercel settings.";
+
   try {
     const prompt = `
       Analyze this specific workout for the following runner:
@@ -53,6 +71,8 @@ export const analyzeWorkoutLog = async (workout: Workout, profile?: UserProfile)
 };
 
 export const getWeeklyCoachInsights = async (workouts: Workout[], profile?: UserProfile): Promise<string> => {
+  if (!checkApiKey()) return "⚠️ Configuration Error: API_KEY is missing. Please set it in Vercel settings.";
+
   try {
     const recentWorkouts = workouts
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
@@ -89,6 +109,10 @@ export const getWeeklyCoachInsights = async (workouts: Workout[], profile?: User
 };
 
 export const getDailyGuidance = async (workouts: Workout[], goals: Goal[], profile?: UserProfile): Promise<{title: string, content: string}> => {
+    if (!checkApiKey()) {
+        return { title: 'Setup Required', content: 'API_KEY is missing. Please configure your Vercel Environment Variables.' };
+    }
+
     try {
         const recent = workouts.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 5);
         
@@ -134,14 +158,20 @@ export const getDailyGuidance = async (workouts: Workout[], goals: Goal[], profi
     } catch (error: any) {
         console.error("Gemini Daily Guidance Error:", error);
         const msg = error.message || '';
+        
+        if (msg.includes('API key') || !apiKey) {
+             return { title: 'Configuration Error', content: 'Invalid or missing API Key. Check Vercel settings.' };
+        }
         if (msg.includes('429') || msg.includes('Quota') || msg.includes('RESOURCE_EXHAUSTED')) {
-             return { title: 'AI Offline', content: 'Quota limits reached. Focus on consistency and listen to your body today.' };
+             return { title: 'AI Limit Reached', content: 'Quota limits reached. Focus on consistency and listen to your body today.' };
         }
         return { title: 'Daily Focus', content: 'Focus on consistency and recovery today.' };
     }
 };
 
 export const compareWorkouts = async (w1: Workout, w2: Workout): Promise<string> => {
+    if (!checkApiKey()) return "⚠️ API_KEY missing. Cannot compare.";
+
     try {
         const prompt = `
         Compare these two workouts side-by-side:
@@ -176,6 +206,8 @@ export const compareWorkouts = async (w1: Workout, w2: Workout): Promise<string>
 };
 
 export const chatWithCoach = async (message: string, contextWorkouts: Workout[], profile?: UserProfile): Promise<string> => {
+    if (!checkApiKey()) return "⚠️ Configuration Error: API_KEY is missing. Please set it in Vercel settings.";
+
     try {
         const recentContext = contextWorkouts.slice(0, 5);
         const prompt = `

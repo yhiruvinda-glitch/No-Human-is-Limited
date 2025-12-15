@@ -5,6 +5,56 @@ export const STATIC_DB: DbSchema = {
   "version": "2024-05-23-initial",
   "workouts": [
     {
+      "id": "1765812946766",
+      "date": "2025-12-15T00:00:00.000Z",
+      "type": "Easy Run",
+      "distance": 7.35,
+      "duration": 40,
+      "feeling": 5,
+      "rpe": 3,
+      "trainingLoad": 120,
+      "notes": "",
+      "intervals": [],
+      "splits": [],
+      "shoe": "Adidas Adizero Evo SL",
+      "route": "UOP",
+      "courseId": "",
+      "surface": "Road",
+      "avgHr": 132,
+      "maxHr": 154,
+      "competition": "",
+      "team": "",
+      "place": "",
+      "eventName": "",
+      "title": "Easy Run 6",
+      "isPb": false,
+      "isSb": false
+    },
+    {
+      "id": "1765812708191",
+      "date": "2025-12-14T00:00:00.000Z",
+      "type": "Race",
+      "distance": 5.4,
+      "duration": 18.9,
+      "feeling": 5,
+      "rpe": 7,
+      "trainingLoad": 132,
+      "notes": "Lost my watch just before the race. Ran completely by feel. No distance, No pace, No splits, No HR. Never expected to finish in the top 5 btw.",
+      "intervals": [],
+      "splits": [],
+      "shoe": "Adidas Adizero Takumi Sen 10",
+      "route": "Colombo",
+      "courseId": "",
+      "surface": "Road",
+      "competition": "ICA International HM - 5K",
+      "team": "",
+      "place": "5th",
+      "eventName": "5K",
+      "title": "ICA International HM - 5K",
+      "isPb": false,
+      "isSb": false
+    },
+    {
       "id": "1765552776265",
       "date": "2025-12-12T00:00:00.000Z",
       "type": "Speed Work",
@@ -964,7 +1014,7 @@ export const STATIC_DB: DbSchema = {
       "eventName": "",
       "title": "Tempo 4",
       "isSb": true,
-      "isPb": true
+      "isPb": false
     },
     {
       "id": "1765393942394",
@@ -1399,7 +1449,7 @@ export const STATIC_DB: DbSchema = {
       "eventName": "5K",
       "title": "LSR Colombo - 5K",
       "isSb": true,
-      "isPb": true
+      "isPb": false
     },
     {
       "id": "1765390444151",
@@ -1534,7 +1584,7 @@ export const STATIC_DB: DbSchema = {
     "age": 23,
     "weight": 51,
     "height": 169,
-    "preferredRace": "5000m",
+    "preferredRace": "Half Marathon",
     "pbs": [
       {
         "distance": "5000m",
