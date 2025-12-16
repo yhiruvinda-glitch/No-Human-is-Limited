@@ -8,6 +8,9 @@ import { SYSTEM_INSTRUCTION_COACH } from '../constants';
 const apiKey = process.env.API_KEY;
 const ai = new GoogleGenAI({ apiKey: apiKey || '' }); 
 
+const PRIMARY_MODEL = 'gemini-3-pro-preview';
+const FALLBACK_MODEL = 'gemini-2.5-flash';
+
 const handleGenAIError = (error: any, defaultMsg: string) => {
     console.error("Gemini API Error:", error);
     const msg = error.message || '';
@@ -30,6 +33,36 @@ const checkApiKey = (): boolean => {
     }
     return true;
 }
+
+// Helper: Smart Generate with Fallback
+// Tries PRIMARY_MODEL first. If it fails (non-auth error), tries FALLBACK_MODEL.
+const generateSafe = async (contents: any, config?: any): Promise<any> => {
+    try {
+        const response = await ai.models.generateContent({
+            model: PRIMARY_MODEL,
+            contents,
+            config
+        });
+        return response;
+    } catch (error: any) {
+        const msg = error.message || '';
+        
+        // If it's an Auth error or Key error, failing back won't help. Throw it.
+        if (msg.includes('API key') || msg.includes('403') || msg.includes('INVALID_ARGUMENT')) {
+            throw error;
+        }
+
+        console.warn(`Primary model (${PRIMARY_MODEL}) failed. Retrying with fallback (${FALLBACK_MODEL})...`, error);
+
+        // Fallback retry
+        const response = await ai.models.generateContent({
+            model: FALLBACK_MODEL,
+            contents,
+            config
+        });
+        return response;
+    }
+};
 
 export const analyzeWorkoutLog = async (workout: Workout, profile?: UserProfile): Promise<string> => {
   if (!checkApiKey()) return "⚠️ Configuration Error: API_KEY is missing. Please set it in Vercel settings.";
@@ -56,12 +89,8 @@ export const analyzeWorkoutLog = async (workout: Workout, profile?: UserProfile)
       Provide a brief 3-sentence feedback on quality, pacing (relative to HR if available), and recovery needs.
     `;
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-pro-preview',
-      contents: prompt,
-      config: {
+    const response = await generateSafe(prompt, {
         systemInstruction: SYSTEM_INSTRUCTION_COACH,
-      }
     });
     
     return response.text || "Could not generate analysis.";
@@ -94,12 +123,8 @@ export const getWeeklyCoachInsights = async (workouts: Workout[], profile?: User
       Format response as a concise bulleted list of 3 Key Insights and 1 Actionable Tip for next week.
     `;
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-pro-preview', 
-      contents: prompt,
-      config: {
+    const response = await generateSafe(prompt, {
         systemInstruction: SYSTEM_INSTRUCTION_COACH,
-      }
     });
 
     return response.text || "Could not generate insights.";
@@ -140,13 +165,9 @@ export const getDailyGuidance = async (workouts: Workout[], goals: Goal[], profi
         Return JSON object: { "title": "Short Headline (e.g. Rest Day Recommended)", "content": "2-3 sentences of specific advice." }
         `;
 
-        const response = await ai.models.generateContent({
-            model: 'gemini-3-pro-preview',
-            contents: prompt,
-            config: {
-                responseMimeType: 'application/json',
-                systemInstruction: SYSTEM_INSTRUCTION_COACH
-            }
+        const response = await generateSafe(prompt, {
+            responseMimeType: 'application/json',
+            systemInstruction: SYSTEM_INSTRUCTION_COACH
         });
 
         const json = JSON.parse(response.text || '{}');
@@ -193,10 +214,8 @@ export const compareWorkouts = async (w1: Workout, w2: Workout): Promise<string>
         Keep it to 4 concise sentences.
         `;
 
-        const response = await ai.models.generateContent({
-            model: 'gemini-3-pro-preview',
-            contents: prompt,
-            config: { systemInstruction: SYSTEM_INSTRUCTION_COACH }
+        const response = await generateSafe(prompt, { 
+            systemInstruction: SYSTEM_INSTRUCTION_COACH 
         });
 
         return response.text || "Comparison unavailable.";
@@ -220,12 +239,8 @@ export const chatWithCoach = async (message: string, contextWorkouts: Workout[],
         Answer as their coach. Keep it motivating but realistic. Use their profile (Name, Injuries, Goals) to personalize the answer.
         `;
 
-        const response = await ai.models.generateContent({
-            model: 'gemini-3-pro-preview',
-            contents: prompt,
-            config: {
-                systemInstruction: SYSTEM_INSTRUCTION_COACH,
-            }
+        const response = await generateSafe(prompt, {
+            systemInstruction: SYSTEM_INSTRUCTION_COACH,
         });
         return response.text || "Coach is silent right now.";
     } catch (error) {

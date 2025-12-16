@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Workout, WorkoutType, Goal, Course } from '../types';
-import { Activity, Search, Timer, CheckCircle2, GitCompare, Trash2, AlertTriangle, Heart, Calendar } from 'lucide-react';
+import { Activity, Search, Timer, CheckCircle2, GitCompare, Trash2, AlertTriangle, Heart, Calendar, Trophy } from 'lucide-react';
 import { formatSecondsToTime, formatMetric, getWorkoutSummary } from '../utils/analytics';
 import { compareWorkouts } from '../services/geminiService';
 import WorkoutDetailModal from './WorkoutDetailModal';
@@ -21,7 +21,7 @@ const FILTER_TABS = [
   { label: 'Intervals', value: WorkoutType.INTERVAL },
   { label: 'Speed', value: WorkoutType.SPEED },
   { label: 'Hills', value: WorkoutType.HILLS },
-  // Race removed from history filter
+  { label: 'Race', value: WorkoutType.RACE },
   { label: 'Treadmill', value: WorkoutType.TREADMILL },
   { label: 'Cycling', value: WorkoutType.CYCLE },
   { label: 'X-Train', value: WorkoutType.CROSS_TRAINING },
@@ -41,9 +41,9 @@ const WorkoutList: React.FC<WorkoutListProps> = ({ workouts, goals, courses, onD
   const [comparisonResult, setComparisonResult] = useState<string | null>(null);
   const [analyzingComparison, setAnalyzingComparison] = useState(false);
 
-  // Filter out Races from the main list (they are in Races tab now)
+  // Include all workouts including Races
   const historyWorkouts = useMemo(() => {
-      return workouts.filter(w => w.type !== WorkoutType.RACE);
+      return workouts;
   }, [workouts]);
 
   // --- Dynamic Tab Sorting ---
@@ -318,9 +318,10 @@ const WorkoutList: React.FC<WorkoutListProps> = ({ workouts, goals, courses, onD
                                     workout.type === WorkoutType.INTERVAL ? 'bg-red-500/10 text-red-500' :
                                     workout.type === WorkoutType.TEMPO ? 'bg-blue-500/10 text-blue-500' :
                                     workout.type === WorkoutType.LONG ? 'bg-green-500/10 text-green-500' :
+                                    workout.type === WorkoutType.RACE ? 'bg-yellow-500/10 text-yellow-500 border-yellow-500/30' :
                                     'bg-brand-500/10 text-brand-500'
                                 }`}>
-                                    <Activity size={24} />
+                                    {workout.type === WorkoutType.RACE ? <Trophy size={20} /> : <Activity size={24} />}
                                 </div>
 
                                 <div className="flex-1 min-w-0">
