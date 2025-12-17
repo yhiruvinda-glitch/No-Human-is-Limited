@@ -1,21 +1,25 @@
-import React from 'react';
-import { Workout } from '../types';
+import React, { useState, useMemo } from 'react';
+import { Workout, Goal } from '../types';
 import { 
     LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
     BarChart, Bar, Legend, ComposedChart, PieChart, Pie, Cell, AreaChart, Area
 } from 'recharts';
-import { generateRacePredictions, calculateVDOT, getBestPerformance, getFitnessTrend } from '../utils/prediction';
+import { generateRacePredictions, calculateVDOT, getBestPerformance, getFitnessTrend, DISTANCES } from '../utils/prediction';
 import { INITIAL_GOALS } from '../constants'; // Fallback goals for baseline
 import { formatSecondsToTime } from '../utils/analytics';
 
 interface AnalysisProps {
   workouts: Workout[];
+  goals: Goal[];
 }
 
 const COLORS = ['#22c55e', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4'];
 
-const Analysis: React.FC<AnalysisProps> = ({ workouts }) => {
+const Analysis: React.FC<AnalysisProps> = ({ workouts, goals }) => {
+  const [trendDistance, setTrendDistance] = useState('5000m');
+  
   const sortedWorkouts = [...workouts].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  const activeGoals = goals && goals.length > 0 ? goals : INITIAL_GOALS;
 
   // 1. Weekly Volume Data
   const weeklyData = React.useMemo(() => {
@@ -70,15 +74,15 @@ const Analysis: React.FC<AnalysisProps> = ({ workouts }) => {
   })).filter(d => d.pace !== null);
 
   // 5. Predictions & Fitness Trend
-  const predictions = generateRacePredictions(workouts, INITIAL_GOALS);
-  const bestPerf = getBestPerformance(workouts, INITIAL_GOALS);
-  const vdot5k = predictions.find(p => p.distanceName === '5000m');
-  const vdot = vdot5k ? calculateVDOT(vdot5k.predictedSeconds) : 0;
+  const predictions = generateRacePredictions(workouts, activeGoals);
   
-  const fitnessTrend = getFitnessTrend(workouts).map(p => ({
-      date: new Date(p.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-      minutes: p.predicted5k ? Number((p.predicted5k / 60).toFixed(2)) : null
-  }));
+  const fitnessTrend = useMemo(() => {
+      const points = getFitnessTrend(workouts, trendDistance);
+      return points.map(p => ({
+          date: new Date(p.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+          minutes: p.predictedSeconds ? Number((p.predictedSeconds / 60).toFixed(2)) : null
+      }));
+  }, [workouts, trendDistance]);
 
   // Helper for charts
   const timeFormatter = (minutes: number) => formatSecondsToTime(minutes * 60);
@@ -97,9 +101,11 @@ const Analysis: React.FC<AnalysisProps> = ({ workouts }) => {
         <div className="p-6 border-b border-slate-700 flex justify-between items-center bg-slate-900/50">
            <div>
              <h3 className="text-lg font-bold text-white flex items-center">
-                Performance Predictor <span className="ml-3 text-xs bg-brand-900 text-brand-400 px-2 py-0.5 rounded border border-brand-800">VDOT {vdot}</span>
+                Performance Predictor
              </h3>
-             <p className="text-xs text-slate-500 mt-1">Based on best recent performance ({bestPerf.km}km in {Math.floor(bestPerf.seconds/60)}:{(bestPerf.seconds%60).toFixed(0).padStart(2,'0')}) from {bestPerf.source}</p>
+             <p className="text-xs text-slate-500 mt-1">
+                Generated using a weighted multi-factor model (Speed, Intervals, Threshold, Tempo, Volume).
+             </p>
            </div>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-px bg-slate-700/50">
@@ -115,7 +121,20 @@ const Analysis: React.FC<AnalysisProps> = ({ workouts }) => {
       
       {/* Race Readiness Trend Graph */}
       <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-sm">
-        <h3 className="text-sm font-semibold text-slate-300 uppercase tracking-widest mb-6">5K Potential Trend (Rolling 6 Weeks)</h3>
+        <div className="flex justify-between items-center mb-6">
+            <h3 className="text-sm font-semibold text-slate-300 uppercase tracking-widest">{trendDistance} Potential Trend</h3>
+            <div className="flex space-x-1 bg-slate-900/50 p-1 rounded-lg border border-slate-700">
+                {DISTANCES.map(d => (
+                    <button
+                        key={d.name}
+                        onClick={() => setTrendDistance(d.name)}
+                        className={`text-[10px] font-bold px-2 py-1 rounded transition ${trendDistance === d.name ? 'bg-brand-600 text-white' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-700'}`}
+                    >
+                        {d.name}
+                    </button>
+                ))}
+            </div>
+        </div>
         <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={fitnessTrend}>
@@ -133,7 +152,7 @@ const Analysis: React.FC<AnalysisProps> = ({ workouts }) => {
                         fontSize={11} 
                         tickLine={false} 
                         axisLine={false} 
-                        label={{ value: 'Predicted 5K', angle: -90, position: 'insideLeft', fill: '#22c55e' }}
+                        label={{ value: `Predicted ${trendDistance}`, angle: -90, position: 'insideLeft', fill: '#22c55e' }}
                         tickFormatter={timeFormatter} 
                     />
                     <Tooltip 

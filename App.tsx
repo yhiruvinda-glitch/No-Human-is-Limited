@@ -319,7 +319,7 @@ const App: React.FC = () => {
       case 'SHOES':
         return <ShoeDepository shoes={shoes} workouts={workouts} onSave={handleSaveShoes} />;
       case 'ANALYSIS':
-        return <Analysis workouts={workouts} />;
+        return <Analysis workouts={workouts} goals={goals} />;
       case 'COACH':
         return <CoachChat workouts={workouts} profile={profile} />;
       case 'PROFILE':
