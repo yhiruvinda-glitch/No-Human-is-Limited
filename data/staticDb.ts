@@ -5,6 +5,32 @@ export const STATIC_DB: DbSchema = {
   "version": "2024-05-23-initial",
   "workouts": [
     {
+      "id": "1766074459541",
+      "date": "2025-12-18T00:00:00.000Z",
+      "type": "Threshold",
+      "distance": 3,
+      "duration": 11.9655,
+      "feeling": 5,
+      "rpe": 5,
+      "trainingLoad": 60,
+      "notes": "Attempted for 3000m x 3 threshold. Was feeling very good. Stopped after the first rep due to mild L/S Lateral Hip pain",
+      "intervals": [],
+      "splits": [],
+      "shoe": "Adidas Adizero Evo SL",
+      "route": "UOP",
+      "courseId": "",
+      "surface": "Track",
+      "avgHr": 157,
+      "maxHr": 171,
+      "competition": "",
+      "team": "",
+      "place": "",
+      "eventName": "",
+      "title": "Threshold 8",
+      "isPb": false,
+      "isSb": false
+    },
+    {
       "id": "1765812946766",
       "date": "2025-12-15T00:00:00.000Z",
       "type": "Easy Run",
@@ -1384,7 +1410,7 @@ export const STATIC_DB: DbSchema = {
       "isPb": false
     },
     {
-      "id": "1765429102188",
+      "id": "1766074795940",
       "date": "2025-10-05T00:00:00.000Z",
       "type": "Race",
       "distance": 5,
@@ -1445,11 +1471,11 @@ export const STATIC_DB: DbSchema = {
       "maxHr": 185,
       "competition": "LSR Colombo - 5K",
       "team": "",
-      "place": "6",
+      "place": "6th",
       "eventName": "5K",
       "title": "LSR Colombo - 5K",
-      "isSb": true,
-      "isPb": false
+      "isPb": false,
+      "isSb": true
     },
     {
       "id": "1765390444151",

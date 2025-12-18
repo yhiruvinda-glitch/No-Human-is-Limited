@@ -10,8 +10,20 @@ export const DISTANCES = [
   { name: 'Half Marathon', km: 21.0975 }
 ];
 
-// Weight Matrix per prompt
-// Defines how much each training component contributes to a target race distance
+// Lookback period for finding quality signals
+const SIGNAL_LOOKBACK_DAYS = 45;
+
+// Baseline volumes for "Standard" signal quality
+// Sessions exceeding these volumes get a "Volume Bonus" in the quality score
+const BASELINE_VOLUMES: Record<string, number> = {
+    SPEED: 1.5,
+    INTERVAL: 4.0,
+    THRESHOLD: 6.0,
+    TEMPO: 8.0,
+    MILEAGE: 12.0
+};
+
+// Weight Matrix
 const WEIGHT_MATRIX: Record<string, Record<string, number>> = {
     '1500m': { SPEED: 0.35, INTERVAL: 0.30, THRESHOLD: 0.15, TEMPO: 0.10, MILEAGE: 0.10 },
     '3000m': { INTERVAL: 0.30, THRESHOLD: 0.25, TEMPO: 0.20, SPEED: 0.15, MILEAGE: 0.10 },
@@ -20,19 +32,17 @@ const WEIGHT_MATRIX: Record<string, Record<string, number>> = {
     'Half Marathon': { TEMPO: 0.35, THRESHOLD: 0.35, MILEAGE: 0.20, INTERVAL: 0.07, SPEED: 0.03 }
 };
 
-// Mapping Workout Types to Components
-// Races are mapped dynamically based on distance in the scanner function
 const TRAINING_COMPONENTS = {
     SPEED: [WorkoutType.SPEED], 
     INTERVAL: [WorkoutType.INTERVAL], 
     THRESHOLD: [WorkoutType.THRESHOLD], 
     TEMPO: [WorkoutType.TEMPO], 
-    MILEAGE: [WorkoutType.LONG] // Using Long Run as proxy for Mileage signal
+    MILEAGE: [WorkoutType.LONG] 
 };
 
 // Riegel Formula
 const predictTime = (baseSeconds: number, baseKm: number, targetKm: number): number => {
-  let exponent = 1.06; // Standard Riegel
+  let exponent = 1.06; 
   return baseSeconds * Math.pow((targetKm / baseKm), exponent);
 };
 
@@ -43,11 +53,10 @@ export const calculateVDOT = (fiveKTimeSeconds: number): number => {
 };
 
 // Helper: Get data from a workout for prediction
-const extractWorkoutData = (w: Workout): { seconds: number, km: number } | null => {
+const extractWorkoutData = (w: Workout): { seconds: number, km: number, rpe: number } | null => {
     let durationSec = 0;
     let distanceKm = 0;
 
-    // Smart Extraction
     if (w.intervals && w.intervals.length > 0) {
             w.intervals.forEach(i => {
                 const d = Number(i.distance) || 0;
@@ -68,24 +77,21 @@ const extractWorkoutData = (w: Workout): { seconds: number, km: number } | null 
     if (distanceKm <= 0 || durationSec <= 0) return null;
 
     // Adjustments for non-max efforts
-    // Long Runs are usually 20-25% slower than race potential. We adjust time DOWN to estimate potential.
     if (w.type === WorkoutType.LONG) {
         durationSec = durationSec * 0.85; 
     }
 
-    return { seconds: durationSec, km: distanceKm };
+    return { seconds: durationSec, km: distanceKm, rpe: w.rpe || 7 };
 };
 
-// Helper to determine component category
 const getComponentCategory = (w: Workout): string => {
     let category = '';
     if (w.type === WorkoutType.RACE) {
         if (w.distance < 1.0) category = 'SPEED';
-        else if (w.distance < 4.0) category = 'INTERVAL'; // 1500m-3k races
-        else if (w.distance < 12.0) category = 'THRESHOLD'; // 5k-10k races
-        else category = 'TEMPO'; // HM+
+        else if (w.distance < 4.0) category = 'INTERVAL'; 
+        else if (w.distance < 12.0) category = 'THRESHOLD'; 
+        else category = 'TEMPO'; 
     } else {
-        // Map standard types
         if (TRAINING_COMPONENTS.SPEED.includes(w.type)) category = 'SPEED';
         else if (TRAINING_COMPONENTS.INTERVAL.includes(w.type)) category = 'INTERVAL';
         else if (TRAINING_COMPONENTS.THRESHOLD.includes(w.type)) category = 'THRESHOLD';
@@ -95,31 +101,33 @@ const getComponentCategory = (w: Workout): string => {
     return category;
 };
 
-// Helper to check validity (min distance)
 const isValidComponent = (category: string, km: number, targetDistName?: string): boolean => {
-    // Minimum volume requirements for a workout to count towards prediction
-    
-    // Speed: 1.5-3km valid ONLY for 1500m. Others need >= 3km.
     if (category === 'SPEED') {
         if (targetDistName === '1500m') {
             return km >= 1.5;
         }
         return km >= 3.0;
     }
-    
     if (category === 'INTERVAL') return km >= 2.0;
-    
-    // Threshold, Tempo, Mileage default to 3km
     return km >= 3.0;
 };
 
-// Scan history to find the best recent component for each category
-// Now accepts targetDistName to perform context-aware filtering
-const getRecentComponents = (workouts: Workout[], targetDistName?: string) => {
-    // Sort Newest -> Oldest
-    const sorted = [...workouts].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+/**
+ * NEW LOGIC: Scan history to find the BEST performance signal for each category.
+ * Instead of just the most recent, it considers Pace, RPE, and Volume.
+ */
+const getBestComponentSignals = (workouts: Workout[], targetDistName?: string, asOfDate?: number) => {
+    const cutoff = (asOfDate || new Date().getTime()) - (SIGNAL_LOOKBACK_DAYS * 24 * 60 * 60 * 1000);
     
-    const components: Record<string, { seconds: number, km: number, date: string, source: string } | null> = {
+    const candidates = workouts.filter(w => {
+        const time = new Date(w.date).getTime();
+        if (asOfDate) {
+            return time >= cutoff && time <= asOfDate;
+        }
+        return time >= cutoff;
+    });
+    
+    const bestSignals: Record<string, { seconds: number, km: number, rpe: number, date: string, source: string, qualityScore: number } | null> = {
         SPEED: null,
         INTERVAL: null,
         THRESHOLD: null,
@@ -127,58 +135,70 @@ const getRecentComponents = (workouts: Workout[], targetDistName?: string) => {
         MILEAGE: null
     };
 
-    for (const w of sorted) {
+    candidates.forEach(w => {
         const category = getComponentCategory(w);
+        if (!category) return;
 
-        if (category && !components[category]) {
-            const data = extractWorkoutData(w);
-            if (data && data.km > 0) {
-                if (isValidComponent(category, data.km, targetDistName)) {
-                    components[category] = {
-                        ...data,
-                        date: w.date,
-                        source: `${w.title || w.type}`
-                    };
-                }
-            }
+        const data = extractWorkoutData(w);
+        if (!data || !isValidComponent(category, data.km, targetDistName)) return;
+
+        /**
+         * Potential Score Calculation
+         * We normalize the workout to see which one represents the fastest "Race Potential".
+         */
+        const rpeAdjustment = 1 + (data.rpe - 8) * 0.015;
+        const baselineVol = BASELINE_VOLUMES[category] || 5;
+        const volumeBonus = Math.min(0.05, Math.max(0, (data.km - baselineVol) * 0.005));
+        const volumeFactor = 1 - volumeBonus;
+
+        const normalizedPaceSec = (data.seconds / data.km) * rpeAdjustment * volumeFactor;
+        const potential5kSeconds = predictTime(normalizedPaceSec * 5, 5, 5); 
+
+        const currentBest = bestSignals[category];
+        if (!currentBest || potential5kSeconds < currentBest.qualityScore) {
+            bestSignals[category] = {
+                seconds: data.seconds,
+                km: data.km,
+                rpe: data.rpe,
+                date: w.date,
+                source: w.title || w.type,
+                qualityScore: potential5kSeconds
+            };
         }
+    });
 
-        // Break if all found
-        if (Object.values(components).every(v => v !== null)) break;
-    }
-
-    return components;
+    return bestSignals;
 };
 
-// Calculate Weighted Prediction
-const calculateWeightedPrediction = (targetKm: number, weights: Record<string, number>, components: any) => {
+const calculateWeightedPrediction = (targetKm: number, weights: Record<string, number>, signals: any) => {
     let totalWeightedSeconds = 0;
     let totalWeight = 0;
 
     Object.entries(weights).forEach(([compKey, weight]) => {
-        const comp = components[compKey];
-        if (comp) {
-            const predSeconds = predictTime(comp.seconds, comp.km, targetKm);
+        const signal = signals[compKey];
+        if (signal) {
+            // Apply RPE and Volume adjustments to the base metrics
+            const rpeAdj = 1 + (signal.rpe - 8) * 0.015;
+            const baselineVol = BASELINE_VOLUMES[compKey] || 5;
+            const volAdj = 1 - Math.min(0.05, Math.max(0, (signal.km - baselineVol) * 0.005));
+            
+            const adjustedBaseSeconds = signal.seconds * rpeAdj * volAdj;
+            const predSeconds = predictTime(adjustedBaseSeconds, signal.km, targetKm);
+            
             totalWeightedSeconds += (predSeconds * weight);
             totalWeight += weight;
         }
     });
 
     if (totalWeight === 0) return null;
-
-    // Normalize result
     return totalWeightedSeconds / totalWeight;
 };
 
 export const generateRacePredictions = (workouts: Workout[], goals: Goal[]): RacePrediction[] => {
-    // Calculate components per target distance to allow specific validation rules
     return DISTANCES.map(d => {
-        const components = getRecentComponents(workouts, d.name);
-        
-        // Fallback for non-standard mapping if we added more distances later
+        const signals = getBestComponentSignals(workouts, d.name);
         const weightProfile = WEIGHT_MATRIX[d.name] || WEIGHT_MATRIX['5000m']; 
-        
-        const predictedSeconds = calculateWeightedPrediction(d.km, weightProfile, components);
+        const predictedSeconds = calculateWeightedPrediction(d.km, weightProfile, signals);
 
         if (!predictedSeconds) return {
             distanceName: d.name,
@@ -186,46 +206,34 @@ export const generateRacePredictions = (workouts: Workout[], goals: Goal[]): Rac
             predictedSeconds: 0,
             predictedTime: '-',
             formattedPace: '-',
-            source: 'Insufficent Data'
+            source: 'Insufficient Data'
         };
 
         const paceSec = predictedSeconds / d.km;
         
-        // Identify primary driver for display source
-        // We find which component contributed most relative weight or just generic "Weighted"
-        // Let's list the freshest component as source hint
-        const freshest = Object.values(components)
-            .filter(c => c !== null)
-            .sort((a,b) => new Date(b!.date).getTime() - new Date(a!.date).getTime())[0];
-
         return {
             distanceName: d.name,
             distanceKm: d.km,
             predictedSeconds: predictedSeconds,
             predictedTime: formatSecondsToTime(predictedSeconds),
             formattedPace: `${Math.floor(paceSec / 60)}:${Math.round(paceSec % 60).toString().padStart(2, '0')}/km`,
-            source: 'Weighted Model' 
+            source: 'Weighted Quality Model' 
         };
     });
 };
 
-// Returns a "Best Performance" object for the Analysis Card
-// We now use the Weighted 5K prediction as the "Gold Standard" of current fitness
 export const getBestPerformance = (workouts: Workout[], goals: Goal[]): { seconds: number, km: number, score: number, source: string } => {
-    const components = getRecentComponents(workouts, '5000m');
+    const signals = getBestComponentSignals(workouts, '5000m');
     const weightProfile = WEIGHT_MATRIX['5000m'];
-    
-    const pred5k = calculateWeightedPrediction(5, weightProfile, components);
+    const pred5k = calculateWeightedPrediction(5, weightProfile, signals);
 
     if (!pred5k) return { seconds: 0, km: 0, score: 0, source: 'No Data' };
 
-    // Score is VDOT-like (higher is better). 
-    // Simply using 10000 / 5k_seconds as a crude score for internal comparison if needed
     return {
         seconds: pred5k,
         km: 5,
         score: calculateVDOT(pred5k),
-        source: 'Multi-Factor Model'
+        source: 'Multi-Factor Quality Model'
     };
 };
 
@@ -233,7 +241,6 @@ export const getGoalProgressPrediction = (goal: Goal, predictions: RacePredictio
     const exactMatch = predictions.find(p => Math.abs(p.distanceKm - goal.targetDistance) < 0.2 && p.predictedSeconds > 0);
     if (exactMatch) return exactMatch;
     
-    // Interpolate using 5K base if non-standard
     const base = predictions.find(p => p.distanceName === '5000m' && p.predictedSeconds > 0);
     if (!base) return null;
 
@@ -246,53 +253,33 @@ export const getGoalProgressPrediction = (goal: Goal, predictions: RacePredictio
         predictedSeconds: seconds,
         predictedTime: formatSecondsToTime(seconds),
         formattedPace: `${Math.floor(paceSec / 60)}:${Math.round(paceSec % 60).toString().padStart(2, '0')}/km`,
-        source: 'Weighted Model'
+        source: 'Weighted Quality Model'
     };
 };
 
 export const getFitnessTrend = (workouts: Workout[], targetDistName: string = '5000m') => {
-    // Generates a chronological trend of potential for a specific distance
-    // using the Weighted Model logic (Most Recent valid workout for each component)
-    
     // Sort Oldest -> Newest
     const sorted = [...workouts].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
     const trendPoints: { date: string, predictedSeconds: number | null }[] = [];
     
-    // Identify target KM and weights
     const targetDistObj = DISTANCES.find(d => d.name === targetDistName) || DISTANCES.find(d => d.name === '5000m');
     const targetKm = targetDistObj!.km;
     const weightProfile = WEIGHT_MATRIX[targetDistName] || WEIGHT_MATRIX['5000m'];
 
-    // State for chronological scan: holds the "latest known" component for each category
-    const latestComponents: Record<string, { seconds: number, km: number } | null> = {
-        SPEED: null, INTERVAL: null, THRESHOLD: null, TEMPO: null, MILEAGE: null
-    };
-
-    let hasData = false;
-
     sorted.forEach(w => {
-        const category = getComponentCategory(w);
+        const asOfDate = new Date(w.date).getTime();
         
-        if (category) {
-            const data = extractWorkoutData(w);
-            if (data && data.km > 0 && isValidComponent(category, data.km, targetDistName)) {
-                latestComponents[category] = data;
-                hasData = true;
-            }
-        }
-
-        // Only emit a point if we have at least one valid component to base a prediction on
-        if (hasData) {
-            const pred = calculateWeightedPrediction(targetKm, weightProfile, latestComponents);
-            
-            // Optimization: Only push if date differs from last or it's a significant change?
-            // For now, push every point to show density of training
-            if (pred) {
-                trendPoints.push({
-                    date: w.date.split('T')[0],
-                    predictedSeconds: pred
-                });
-            }
+        // Find the best quality signals *at this point in history*
+        const signalsAtPoint = getBestComponentSignals(workouts, targetDistName, asOfDate);
+        
+        // Calculate the prediction using the weighted adjusted logic
+        const pred = calculateWeightedPrediction(targetKm, weightProfile, signalsAtPoint);
+        
+        if (pred) {
+            trendPoints.push({
+                date: w.date.split('T')[0],
+                predictedSeconds: pred
+            });
         }
     });
 

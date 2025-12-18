@@ -328,8 +328,9 @@ const getSegmentsFromWorkout = (workout: Workout): PerformanceSegment[] => {
     const hasIntervals = workout.intervals && workout.intervals.length > 0;
 
     // 1. Extract Intervals (if present)
-    // NOTE: We do NOT count Tempo splits as separate SB segments, only the total run.
-    if (hasIntervals && workout.type !== WorkoutType.TEMPO) {
+    // CRITICAL: We do NOT count splits/intervals from TEMPO or RACE as individual SB segments.
+    // This prevents a single 1km split in a 5K race from showing up as a "1000m SB".
+    if (hasIntervals && workout.type !== WorkoutType.TEMPO && workout.type !== WorkoutType.RACE) {
         workout.intervals!.forEach(set => {
             const distKm = (set.distance || 0) / 1000;
             const durMin = parseTimeStringToSeconds(set.duration || '0') / 60;
@@ -420,11 +421,6 @@ export const recalculateRecords = (allWorkouts: Workout[], seasonStartDate?: str
         const manualTime = getManualPbSeconds(distName);
         
         // If Manual Time exists and is significantly faster than log time.
-        // We use a tight tolerance of 0.05s to handle floating point noise but respect slight differences.
-        // Example: Manual 17:37.67 (1057.67s). Log 17:38.00 (1058.00s). 
-        // 1058.00 > (1057.67 + 0.05) => 1058.00 > 1057.72 => TRUE.
-        // So the log is slower and NOT a PB.
-        
         if (manualTime && bestLog.time > (manualTime + 0.05)) {
             // Manual PB is faster, so no log gets the badge for this distance.
             return;
@@ -458,8 +454,6 @@ export const recalculateRecords = (allWorkouts: Workout[], seasonStartDate?: str
     });
 
     // 5. Apply flags
-    // Note: If a workout is a PB, it implies it is also an SB (if in season).
-    // The previous logic for SB tagging was purely based on log history in that season.
     const sbWorkoutIds = new Set(Object.values(sbBests).map(v => v.workoutId));
 
     return resetWorkouts.map(w => ({
@@ -530,7 +524,7 @@ export const detectBestEfforts = (
         seasonStartObj = new Date(new Date().getFullYear(), 0, 1);
     }
 
-    // Workouts in current season, EXCLUDING the new one (if it's already in history, though normally this func is called before save)
+    // Workouts in current season, EXCLUDING the new one
     const seasonWorkouts = history.filter(w => new Date(w.date) >= seasonStartObj && w.id !== newWorkout.id);
     
     // Analyze each segment from the new workout
@@ -566,7 +560,6 @@ export const detectBestEfforts = (
         let bestInSeason = Infinity;
         let foundComparison = false;
 
-        // Use strict tolerance for SB comparison
         const sbTol = stdMatch 
             ? (stdMatch.km < 3 ? 0.03 : 0.1) 
             : (segment.distanceKm < 1 ? 0.02 : 0.1);
@@ -589,7 +582,6 @@ export const detectBestEfforts = (
             // Check if we beat the previous best
             if (segSec < bestInSeason) {
                 isSb = true;
-                // Prefer Standard Name if available, else format distance
                 if (!distanceName || (stdMatch && distanceName.includes('km'))) {
                     distanceName = stdMatch ? stdMatch.name : `${segment.distanceKm >= 1 ? segment.distanceKm.toFixed(2) + 'km' : Math.round(segment.distanceKm * 1000) + 'm'}`;
                 }
