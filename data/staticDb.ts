@@ -1755,6 +1755,26 @@ export const STATIC_DB: DbSchema = {
       "status": "Active",
       "maxMileage": 400,
       "initialDistance": 78
+    },
+    {
+      "id": "1766170024360",
+      "name": "Adidas Adizero Distancestar",
+      "brand": "Adidas",
+      "model": "Adizero Distancestar",
+      "purchaseDate": "2024-11-14",
+      "status": "Active",
+      "maxMileage": 150,
+      "initialDistance": 14
+    },
+    {
+      "id": "1766170143917",
+      "name": "Asics Gel Nimbus 26",
+      "brand": "Asics",
+      "model": "Gel Nimbus 26",
+      "purchaseDate": "2025-12-09",
+      "status": "Active",
+      "maxMileage": 700,
+      "initialDistance": 0
     }
   ]
 } as unknown as DbSchema;
