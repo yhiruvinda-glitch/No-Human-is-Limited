@@ -1,3 +1,4 @@
+
 import { Workout, Goal, WorkoutType, RacePrediction } from '../types';
 import { parseTimeStringToSeconds, formatSecondsToTime } from './analytics';
 
@@ -113,18 +114,28 @@ const isValidComponent = (category: string, km: number, targetDistName?: string)
 };
 
 /**
- * NEW LOGIC: Scan history to find the BEST performance signal for each category.
- * Instead of just the most recent, it considers Pace, RPE, and Volume.
+ * Scan history to find the BEST performance signal for each category.
+ * To prevent predictions from decaying due to time alone, we anchor the lookback 
+ * window to the date of the most recent workout in the history.
  */
 const getBestComponentSignals = (workouts: Workout[], targetDistName?: string, asOfDate?: number) => {
-    const cutoff = (asOfDate || new Date().getTime()) - (SIGNAL_LOOKBACK_DAYS * 24 * 60 * 60 * 1000);
+    // Determine the reference point for the lookback window.
+    // If we're looking at a specific point in history (fitness trend), use that.
+    // Otherwise, use the date of the most recent activity.
+    const latestWorkoutTime = workouts.length > 0 
+        ? Math.max(...workouts.map(w => new Date(w.date).getTime())) 
+        : new Date().getTime();
+        
+    const referenceTime = asOfDate || latestWorkoutTime;
+    const cutoff = referenceTime - (SIGNAL_LOOKBACK_DAYS * 24 * 60 * 60 * 1000);
     
     const candidates = workouts.filter(w => {
         const time = new Date(w.date).getTime();
         if (asOfDate) {
             return time >= cutoff && time <= asOfDate;
         }
-        return time >= cutoff;
+        // Fixed: The prediction window is now stable relative to your last workout.
+        return time >= cutoff && time <= referenceTime;
     });
     
     const bestSignals: Record<string, { seconds: number, km: number, rpe: number, date: string, source: string, qualityScore: number } | null> = {
