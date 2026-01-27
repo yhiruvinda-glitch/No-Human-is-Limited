@@ -5,6 +5,74 @@ export const STATIC_DB: DbSchema = {
   "version": "2024-05-23-initial",
   "workouts": [
     {
+      "id": "1769534925240",
+      "date": "2026-01-27T00:00:00.000Z",
+      "type": "Race",
+      "distance": 4.55,
+      "duration": 17.366666666666667,
+      "feeling": 5,
+      "rpe": 8,
+      "trainingLoad": 139,
+      "notes": "First Race after a While, Feeling good about the comeback after injury",
+      "intervals": [
+        {
+          "reps": 1,
+          "distance": 1000,
+          "duration": "3:54",
+          "recovery": "",
+          "pace": "03:54.0"
+        },
+        {
+          "reps": 1,
+          "distance": 1000,
+          "duration": "4:05",
+          "recovery": "",
+          "pace": "04:05.0"
+        },
+        {
+          "reps": 1,
+          "distance": 1000,
+          "duration": "3:39",
+          "recovery": "",
+          "pace": "03:39.0"
+        },
+        {
+          "reps": 1,
+          "distance": 1000,
+          "duration": "3:43",
+          "recovery": "",
+          "pace": "03:43.0"
+        },
+        {
+          "reps": 1,
+          "distance": 550,
+          "duration": "2:01",
+          "recovery": "",
+          "pace": "03:40.0"
+        }
+      ],
+      "splits": [
+        234,
+        245,
+        219,
+        223,
+        121
+      ],
+      "shoe": "Adidas Adizero Takumi Sen 10",
+      "route": "UOP",
+      "courseId": "",
+      "surface": "Road",
+      "avgHr": 160,
+      "maxHr": 175,
+      "competition": "Faculty Meet - FOM - 2026",
+      "team": "20 Batch",
+      "place": "1st",
+      "eventName": "Road Race",
+      "title": "Faculty Meet - FOM - 2026",
+      "isPb": false,
+      "isSb": false
+    },
+    {
       "id": "1769447156208",
       "date": "2026-01-26T00:00:00.000Z",
       "type": "Tempo",
