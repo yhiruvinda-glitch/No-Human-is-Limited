@@ -1,4 +1,5 @@
-import { Workout, Goal, IntervalAnalysis, UserProfile, PersonalBest, WorkoutType, IntervalGroupStats } from '../types';
+
+import { Workout, Goal, IntervalAnalysis, UserProfile, PersonalBest, WorkoutType, IntervalGroupStats, Season } from '../types';
 
 // Helper: Parse "MM:SS" or "SS" or "M:SS.ms" into seconds
 export const parseTimeStringToSeconds = (timeStr: string): number => {
@@ -216,8 +217,60 @@ const getSegmentsFromWorkout = (workout: Workout): PerformanceSegment[] => {
     return segments;
 };
 
-export const recalculateRecords = (allWorkouts: Workout[], seasonStartDate?: string, profilePbs?: PersonalBest[]): Workout[] => {
-    const resetWorkouts = allWorkouts.map(w => ({ ...w, isPb: false, isSb: false }));
+/**
+ * Recalculates Records (PB/SB) and numbering of workout titles.
+ * Numbering is strictly based on training season boundaries, not calendar years.
+ */
+export const recalculateRecords = (
+    allWorkouts: Workout[], 
+    activeSeasonStart?: string, 
+    profilePbs?: PersonalBest[],
+    allSeasons: Season[] = []
+): Workout[] => {
+    // 1. Reset and Initial Sorting (Oldest to Newest is critical for consistent numbering)
+    const sortedWorkouts = [...allWorkouts]
+        .map(w => ({ ...w, isPb: false, isSb: false }))
+        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+    // 2. Title Re-numbering Logic (Season-Based)
+    const typeCounters: Record<string, Record<string, number>> = {}; // { seasonKey: { type: count } }
+
+    const getSeasonIdAtDate = (date: Date): string => {
+        // Robust date check: treat workout as UTC to align with season ISO strings
+        const time = date.getTime();
+        const season = allSeasons.find(s => {
+            const start = new Date(s.startDate).getTime();
+            const end = s.endDate ? new Date(s.endDate).getTime() : Infinity;
+            return time >= start && time <= end;
+        });
+        // If no season found, fallback to calendar year string
+        return season ? `S_${season.id}` : `Y_${date.getFullYear()}`;
+    };
+
+    sortedWorkouts.forEach(w => {
+        if (w.type === WorkoutType.RACE) return; // Races don't get auto-numbered
+
+        const seasonKey = getSeasonIdAtDate(new Date(w.date));
+        if (!typeCounters[seasonKey]) typeCounters[seasonKey] = {};
+        
+        const countKey = w.type;
+        typeCounters[seasonKey][countKey] = (typeCounters[seasonKey][countKey] || 0) + 1;
+        const currentCount = typeCounters[seasonKey][countKey];
+
+        // Standard auto-generated patterns: "Easy Run 1", "Tempo 5", "Road Tempo 2"
+        const standardPattern = new RegExp(`^(${w.type}|Road Tempo|Tempo) \\d+$`);
+        
+        // If title is missing or matches an auto-generated pattern, RE-TITLE it with correct count
+        if (!w.title || standardPattern.test(w.title)) {
+            if (w.type === WorkoutType.TEMPO && w.surface === 'Road') {
+                w.title = `Road Tempo ${currentCount}`;
+            } else {
+                w.title = `${w.type} ${currentCount}`;
+            }
+        }
+    });
+
+    // 3. PB Calculation (Global Log Bests)
     const getManualPbSeconds = (distName: string): number | null => {
         if (!profilePbs) return null;
         let pb = profilePbs.find(p => p.distance === distName);
@@ -227,8 +280,9 @@ export const recalculateRecords = (allWorkouts: Workout[], seasonStartDate?: str
         if (!pb && distName === '10K') pb = profilePbs.find(p => p.distance === '10km');
         return pb ? parseTimeStringToSeconds(pb.time) : null;
     };
+
     const logBests: Record<string, { time: number, workoutId: string }> = {};
-    resetWorkouts.forEach(w => {
+    sortedWorkouts.forEach(w => {
         const segments = getSegmentsFromWorkout(w);
         segments.forEach(seg => {
             const match = STANDARD_DISTANCES.find(sd => {
@@ -237,19 +291,24 @@ export const recalculateRecords = (allWorkouts: Workout[], seasonStartDate?: str
             });
             if (match && PB_ELIGIBLE_NAMES.includes(match.name)) {
                 const sec = seg.durationMin * 60;
-                if (!logBests[match.name] || sec < logBests[match.name].time) logBests[match.name] = { time: sec, workoutId: w.id };
+                if (!logBests[match.name] || sec < logBests[match.name].time) {
+                    logBests[match.name] = { time: sec, workoutId: w.id };
+                }
             }
         });
     });
+
     const validPbWorkoutIds = new Set<string>();
     Object.entries(logBests).forEach(([distName, bestLog]) => {
         const manualTime = getManualPbSeconds(distName);
         if (manualTime && bestLog.time > (manualTime + 0.05)) return;
         validPbWorkoutIds.add(bestLog.workoutId);
     });
+
+    // 4. SB Calculation (Current Season)
     const sbBests: Record<string, { time: number, workoutId: string }> = {};
-    const seasonStart = seasonStartDate ? new Date(seasonStartDate) : new Date(new Date().getFullYear(), 0, 1);
-    resetWorkouts.forEach(w => {
+    const seasonStart = activeSeasonStart ? new Date(activeSeasonStart) : new Date(new Date().getFullYear(), 0, 1);
+    sortedWorkouts.forEach(w => {
         if (new Date(w.date) < seasonStart) return;
         const segments = getSegmentsFromWorkout(w);
         segments.forEach(seg => {
@@ -259,16 +318,21 @@ export const recalculateRecords = (allWorkouts: Workout[], seasonStartDate?: str
             });
             if (match) {
                 const sec = seg.durationMin * 60;
-                if (!sbBests[match.name] || sec < sbBests[match.name].time) sbBests[match.name] = { time: sec, workoutId: w.id };
+                if (!sbBests[match.name] || sec < sbBests[match.name].time) {
+                    sbBests[match.name] = { time: sec, workoutId: w.id };
+                }
             }
         });
     });
+
     const sbWorkoutIds = new Set(Object.values(sbBests).map(v => v.workoutId));
-    return resetWorkouts.map(w => ({
+    
+    // Apply final flags and return newest-first as expected by UI
+    return sortedWorkouts.map(w => ({
         ...w,
         isPb: validPbWorkoutIds.has(w.id),
         isSb: sbWorkoutIds.has(w.id) && !validPbWorkoutIds.has(w.id)
-    }));
+    })).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 };
 
 export const calculateSeasonBests = (workouts: Workout[]): PersonalBest[] => {

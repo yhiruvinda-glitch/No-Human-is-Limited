@@ -1,4 +1,5 @@
-import { DbSchema } from '@/types';
+
+import { DbSchema } from '../types';
 
 // Generated Static DB State
 export const STATIC_DB: DbSchema = {
@@ -1931,6 +1932,15 @@ export const STATIC_DB: DbSchema = {
       "currentBest": "00:00",
       "baseline": "00:00",
       "deadline": "2025-12-14"
+    },
+    {
+      "id": "1769536028287",
+      "name": "Galle Half Marathon",
+      "targetDistance": 10,
+      "targetTime": "37:50",
+      "currentBest": "00:00",
+      "baseline": "00:00",
+      "deadline": "2026-02-01"
     }
   ],
   "profile": {
