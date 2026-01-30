@@ -1,8 +1,8 @@
-import { DbSchema } from '@/types';
+import { DbSchema } from '../types';
 
 // Generated Static DB State
 export const STATIC_DB: DbSchema = {
-  "version": "2024-05-23-initial",
+  "version": "2026-02-01-season-sync-v2",
   "workouts": [
     {
       "id": "1769785580620",
