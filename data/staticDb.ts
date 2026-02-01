@@ -2,8 +2,116 @@ import { DbSchema } from '../types';
 
 // Generated Static DB State
 export const STATIC_DB: DbSchema = {
-  "version": "2026-02-01-season-sync-v2",
+  "version": "2026-02-01-season-sync-v3",
   "workouts": [
+    {
+      "id": "1769968921946",
+      "date": "2026-02-01T00:00:00.000Z",
+      "type": "Race",
+      "distance": 9.6,
+      "duration": 36.93333333333333,
+      "feeling": 5,
+      "rpe": 7,
+      "trainingLoad": 259,
+      "notes": "Felt good all the way through the run, I expected to fade after 7k because of loss of aerobic engine in the last month. Surprisingly felt good and finished strong.",
+      "intervals": [
+        {
+          "reps": 1,
+          "distance": 1000,
+          "duration": "4:01",
+          "recovery": "",
+          "pace": "04:01.0"
+        },
+        {
+          "reps": 1,
+          "distance": 1000,
+          "duration": "3:49",
+          "recovery": "",
+          "pace": "03:49.0"
+        },
+        {
+          "reps": 1,
+          "distance": 1000,
+          "duration": "3:53",
+          "recovery": "",
+          "pace": "03:53.0"
+        },
+        {
+          "reps": 1,
+          "distance": 1000,
+          "duration": "3:53",
+          "recovery": "",
+          "pace": "03:53.0"
+        },
+        {
+          "reps": 1,
+          "distance": 1000,
+          "duration": "3:54",
+          "recovery": "",
+          "pace": "03:54.0"
+        },
+        {
+          "reps": 1,
+          "distance": 1000,
+          "duration": "3:48",
+          "recovery": "",
+          "pace": "03:48.0"
+        },
+        {
+          "reps": 1,
+          "distance": 1000,
+          "duration": "3:56",
+          "recovery": "",
+          "pace": "03:56.0"
+        },
+        {
+          "reps": 1,
+          "distance": 1000,
+          "duration": "3:49",
+          "recovery": "",
+          "pace": "03:49.0"
+        },
+        {
+          "reps": 1,
+          "distance": 1000,
+          "duration": "3:47",
+          "recovery": "",
+          "pace": "03:47.0"
+        },
+        {
+          "reps": 1,
+          "distance": 600,
+          "duration": "2:06",
+          "recovery": "",
+          "pace": "03:30.0"
+        }
+      ],
+      "splits": [
+        241,
+        229,
+        233,
+        233,
+        234,
+        228,
+        236,
+        229,
+        227,
+        126
+      ],
+      "shoe": "Adidas Adizero Takumi Sen 10",
+      "route": "Galle Fort",
+      "courseId": "",
+      "surface": "Road",
+      "avgHr": 170,
+      "maxHr": 187,
+      "competition": "Galle Half Marathon - 10K",
+      "team": "University of Peradeniya",
+      "place": "13th",
+      "eventName": "10K",
+      "isPb": false,
+      "isSb": false,
+      "title": "Galle Half Marathon - 10K"
+    },
     {
       "id": "1769785580620",
       "date": "2026-01-30T00:00:00.000Z",
@@ -864,7 +972,7 @@ export const STATIC_DB: DbSchema = {
       "team": "",
       "place": "",
       "eventName": "",
-      "title": "Threshold 6",
+      "title": "Threshold 3",
       "isPb": false,
       "isSb": false
     },
@@ -932,7 +1040,7 @@ export const STATIC_DB: DbSchema = {
       "team": "",
       "place": "",
       "eventName": "",
-      "title": "Threshold 5",
+      "title": "Threshold 2",
       "isSb": true,
       "isPb": false
     },
@@ -1016,7 +1124,7 @@ export const STATIC_DB: DbSchema = {
       "team": "",
       "place": "",
       "eventName": "",
-      "title": "Tempo 5",
+      "title": "Tempo 2",
       "isSb": true,
       "isPb": false
     },
@@ -1124,7 +1232,7 @@ export const STATIC_DB: DbSchema = {
       "team": "",
       "place": "",
       "eventName": "",
-      "title": "Road Tempo 4",
+      "title": "Road Tempo 1",
       "isSb": false,
       "isPb": false
     },
@@ -1184,7 +1292,7 @@ export const STATIC_DB: DbSchema = {
       "team": "",
       "place": "",
       "eventName": "",
-      "title": "Threshold 4",
+      "title": "Threshold 1",
       "isSb": true,
       "isPb": false
     },
@@ -1418,7 +1526,7 @@ export const STATIC_DB: DbSchema = {
       "team": "",
       "place": "",
       "eventName": "",
-      "title": "Tempo 3",
+      "title": "Tempo 1",
       "isSb": true,
       "isPb": false
     },
@@ -1494,7 +1602,7 @@ export const STATIC_DB: DbSchema = {
       "team": "",
       "place": "",
       "eventName": "",
-      "title": "Threshold 3",
+      "title": "Threshold 1",
       "isPb": false,
       "isSb": false
     },
@@ -1785,7 +1893,7 @@ export const STATIC_DB: DbSchema = {
       "team": "",
       "place": "",
       "eventName": "",
-      "title": "Threshold 2",
+      "title": "Threshold 1",
       "isSb": true,
       "isPb": false
     },

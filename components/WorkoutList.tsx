@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { Workout, WorkoutType, Goal, Course } from '../types';
 import { Activity, Search, Timer, CheckCircle2, GitCompare, Trash2, AlertTriangle, Heart, Calendar, Trophy } from 'lucide-react';
@@ -68,7 +69,7 @@ const WorkoutList: React.FC<WorkoutListProps> = ({ workouts, goals, courses, onD
 
   const filteredWorkouts = historyWorkouts
     .filter(w => filter === 'ALL' || w.type === filter)
-    .filter(w => w.notes.toLowerCase().includes(search.toLowerCase()) || w.type.toLowerCase().includes(search.toLowerCase()) || (w.title && w.title.toLowerCase().includes(search.toLowerCase())))
+    .filter(w => w.notes.toLowerCase().includes(search.toLowerCase()) || w.type.toLowerCase().includes(search.toLowerCase()) || (w.title && w.title.toLowerCase().includes(search.toLowerCase())) || (w.competition && w.competition.toLowerCase().includes(search.toLowerCase())))
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   // --- Statistics Calculation ---
@@ -281,6 +282,9 @@ const WorkoutList: React.FC<WorkoutListProps> = ({ workouts, goals, courses, onD
                 const hasIntervalData = workout.intervals && workout.intervals.length > 0;
                 const summary = isStructured && hasIntervalData ? getWorkoutSummary(workout) : null;
 
+                // Better title logic for the list (consistent with Races tab)
+                const displayTitle = workout.title || (workout.type === WorkoutType.RACE ? (workout.competition || workout.type) : workout.type);
+
                 return (
                     <div 
                         key={workout.id} 
@@ -332,7 +336,7 @@ const WorkoutList: React.FC<WorkoutListProps> = ({ workouts, goals, courses, onD
                                             <span className="mx-1">•</span>
                                             <span className="flex items-center"><Calendar size={10} className="mr-1"/> {new Date(workout.date).toLocaleDateString()}</span>
                                         </div>
-                                        <h3 className="font-bold text-white text-xl hover:text-brand-500 transition truncate pr-8">{workout.title || workout.type}</h3>
+                                        <h3 className="font-bold text-white text-xl hover:text-brand-500 transition truncate pr-8">{displayTitle}</h3>
                                         
                                         {/* Structured Workout Summary */}
                                         {summary && (

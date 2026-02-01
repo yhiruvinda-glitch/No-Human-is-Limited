@@ -248,7 +248,11 @@ export const recalculateRecords = (
     };
 
     sortedWorkouts.forEach(w => {
-        if (w.type === WorkoutType.RACE) return; // Races don't get auto-numbered
+        if (w.type === WorkoutType.RACE) {
+            // For races, ensure title is not empty if competition name is available
+            if (!w.title) w.title = w.competition || 'Race';
+            return; 
+        }
 
         const seasonKey = getSeasonIdAtDate(new Date(w.date));
         if (!typeCounters[seasonKey]) typeCounters[seasonKey] = {};
