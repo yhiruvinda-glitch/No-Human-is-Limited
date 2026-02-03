@@ -1,4 +1,4 @@
-import { DbSchema } from '@/types';
+import { DbSchema } from '../types';
 
 // Generated Static DB State
 export const STATIC_DB: DbSchema = {
