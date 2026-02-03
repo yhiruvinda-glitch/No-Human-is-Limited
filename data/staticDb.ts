@@ -1,9 +1,35 @@
-import { DbSchema } from '../types';
+import { DbSchema } from '@/types';
 
 // Generated Static DB State
 export const STATIC_DB: DbSchema = {
-  "version": "2026-02-01-season-sync-v3",
+  "version": "2026-02-01-season-sync-v4",
   "workouts": [
+    {
+      "id": "1770128589933",
+      "date": "2026-02-03T00:00:00.000Z",
+      "type": "Easy Run",
+      "distance": 7.6,
+      "duration": 40.96666666666667,
+      "feeling": 5,
+      "rpe": 4,
+      "trainingLoad": 164,
+      "notes": "Nice easy recovery run after the hard racing effort on Sunday.",
+      "intervals": [],
+      "splits": [],
+      "shoe": "Adidas Adizero Evo SL",
+      "route": "UOP",
+      "courseId": "",
+      "surface": "Grass",
+      "avgHr": 138,
+      "maxHr": 146,
+      "competition": "",
+      "team": "",
+      "place": "",
+      "eventName": "",
+      "isPb": false,
+      "isSb": false,
+      "title": "Easy Run 13"
+    },
     {
       "id": "1769968921946",
       "date": "2026-02-01T00:00:00.000Z",
@@ -972,7 +998,7 @@ export const STATIC_DB: DbSchema = {
       "team": "",
       "place": "",
       "eventName": "",
-      "title": "Threshold 3",
+      "title": "Threshold 6",
       "isPb": false,
       "isSb": false
     },
@@ -1040,7 +1066,7 @@ export const STATIC_DB: DbSchema = {
       "team": "",
       "place": "",
       "eventName": "",
-      "title": "Threshold 2",
+      "title": "Threshold 5",
       "isSb": true,
       "isPb": false
     },
@@ -1124,7 +1150,7 @@ export const STATIC_DB: DbSchema = {
       "team": "",
       "place": "",
       "eventName": "",
-      "title": "Tempo 2",
+      "title": "Tempo 5",
       "isSb": true,
       "isPb": false
     },
@@ -1232,7 +1258,7 @@ export const STATIC_DB: DbSchema = {
       "team": "",
       "place": "",
       "eventName": "",
-      "title": "Road Tempo 1",
+      "title": "Road Tempo 4",
       "isSb": false,
       "isPb": false
     },
@@ -1292,7 +1318,7 @@ export const STATIC_DB: DbSchema = {
       "team": "",
       "place": "",
       "eventName": "",
-      "title": "Threshold 1",
+      "title": "Threshold 4",
       "isSb": true,
       "isPb": false
     },
@@ -1526,7 +1552,7 @@ export const STATIC_DB: DbSchema = {
       "team": "",
       "place": "",
       "eventName": "",
-      "title": "Tempo 1",
+      "title": "Tempo 3",
       "isSb": true,
       "isPb": false
     },
@@ -1602,7 +1628,7 @@ export const STATIC_DB: DbSchema = {
       "team": "",
       "place": "",
       "eventName": "",
-      "title": "Threshold 1",
+      "title": "Threshold 3",
       "isPb": false,
       "isSb": false
     },
@@ -1893,7 +1919,7 @@ export const STATIC_DB: DbSchema = {
       "team": "",
       "place": "",
       "eventName": "",
-      "title": "Threshold 1",
+      "title": "Threshold 2",
       "isSb": true,
       "isPb": false
     },

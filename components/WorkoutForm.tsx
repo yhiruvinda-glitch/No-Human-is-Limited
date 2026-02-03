@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect } from 'react';
 import { WorkoutType, Workout, IntervalSet, SurfaceType, Course, Shoe } from '../types';
-import { Plus, Trash2, Save, Wand2, Clock, MapPin, Activity, ListOrdered, Calculator, Copy, Bike, Trophy, Flag, Users, Map } from 'lucide-react';
+import { Plus, Trash2, Save, Wand2, Clock, MapPin, Activity, ListOrdered, Calculator, Trophy, Flag, Users, Map } from 'lucide-react';
 import { analyzeWorkoutLog } from '../services/geminiService';
 import { extractSplitsFromText, formatSecondsToTime, parseTimeStringToSeconds, calculatePaceFromSpeed } from '../utils/analytics';
 import { SHOE_OPTIONS } from '../constants';
@@ -15,6 +16,7 @@ interface WorkoutFormProps {
 const WorkoutForm: React.FC<WorkoutFormProps> = ({ onSave, onCancel, courses = [], shoes = [] }) => {
   const [formData, setFormData] = useState<Partial<Workout>>({
     date: new Date().toISOString().split('T')[0],
+    timeOfDay: new Date().toTimeString().slice(0, 5),
     type: WorkoutType.EASY,
     distance: 0,
     duration: 0,
@@ -42,7 +44,6 @@ const WorkoutForm: React.FC<WorkoutFormProps> = ({ onSave, onCancel, courses = [
   const [liveMetric, setLiveMetric] = useState('-');
 
   const activeShoes = shoes.filter(s => s.status === 'Active');
-  // Fallback to constants if no shoes provided (shouldn't happen with correct storage seeding)
   const shoeList = activeShoes.length > 0 ? activeShoes.map(s => s.name) : SHOE_OPTIONS;
 
   const isCycling = formData.type === WorkoutType.CYCLE;
@@ -51,7 +52,6 @@ const WorkoutForm: React.FC<WorkoutFormProps> = ({ onSave, onCancel, courses = [
   const isTempo = formData.type === WorkoutType.TEMPO;
   const isRace = formData.type === WorkoutType.RACE;
   
-  // Enable Precision Grid for Hills, Speed, Intervals, Threshold, Tempo, and Race
   const isPrecisionMode = [
       WorkoutType.HILLS, 
       WorkoutType.SPEED, 
@@ -61,25 +61,20 @@ const WorkoutForm: React.FC<WorkoutFormProps> = ({ onSave, onCancel, courses = [
       WorkoutType.RACE
   ].includes(formData.type as WorkoutType);
 
-  // Identify simple runs where complex interval structure is unnecessary
   const isSimpleRun = [
       WorkoutType.EASY,
       WorkoutType.RECOVERY,
       WorkoutType.LONG,
       WorkoutType.CROSS_TRAINING,
-      // Race moved to precision mode
   ].includes(formData.type as WorkoutType);
 
-  // Effects to handle pace/speed calculation and duration sync
   useEffect(() => {
     if (formData.distance && formData.duration) {
       if (isCycling) {
-          // Calculate Speed (km/h)
           const hours = formData.duration / 60;
           const speed = formData.distance / hours;
           setLiveMetric(`${speed.toFixed(1)} km/h`);
       } else {
-          // Calculate Pace (min/km)
           const paceDec = formData.duration / formData.distance;
           const paceMin = Math.floor(paceDec);
           const paceSec = Math.round((paceDec - paceMin) * 60);
@@ -90,20 +85,16 @@ const WorkoutForm: React.FC<WorkoutFormProps> = ({ onSave, onCancel, courses = [
     }
   }, [formData.distance, formData.duration, isCycling]);
 
-  // Auto-set surface based on type
   useEffect(() => {
       if (formData.type === WorkoutType.TREADMILL) {
           setFormData(prev => ({ ...prev, surface: 'Treadmill' }));
       } else if (formData.type === WorkoutType.CYCLE) {
            setFormData(prev => ({ ...prev, surface: 'Road' })); 
       } else if (formData.type === WorkoutType.SPEED || formData.type === WorkoutType.INTERVAL) {
-           // Speed work and Intervals default to Track
            setFormData(prev => ({ ...prev, surface: 'Track' }));
       } else if (formData.type === WorkoutType.TEMPO) {
-           // Tempo defaults to Road (user can manually switch to Track for Track Tempo)
            setFormData(prev => ({ ...prev, surface: 'Road' }));
       } else if (formData.type === WorkoutType.RACE) {
-           // Race default
            if (!formData.surface) setFormData(prev => ({ ...prev, surface: 'Road' }));
       }
   }, [formData.type]);
@@ -152,7 +143,6 @@ const WorkoutForm: React.FC<WorkoutFormProps> = ({ onSave, onCancel, courses = [
       }
   };
 
-  // --- Interval Handlers ---
   const addInterval = () => {
     const newIntervals = [...(formData.intervals || []), { reps: 1, recovery: '90s jog' }];
     setFormData(prev => updateTotalsFromIntervals(prev, newIntervals));
@@ -170,14 +160,11 @@ const WorkoutForm: React.FC<WorkoutFormProps> = ({ onSave, onCancel, courses = [
     setFormData(prev => updateTotalsFromIntervals(prev, updatedIntervals));
   };
 
-  // --- Precision Grid Handlers (Hills / Speed / Intervals / Threshold / Tempo / Race) ---
   const addPrecisionRep = () => {
-      // Duplicate last rep details if exists (distance/recovery usually same)
       const last = formData.intervals && formData.intervals.length > 0 
         ? formData.intervals[formData.intervals.length - 1] 
         : { reps: 1, distance: 400, duration: '', recovery: '90s' };
 
-      // For Tempo and Race, default to 1000m (1km) splits
       const defaultDist = (formData.type === WorkoutType.TEMPO || formData.type === WorkoutType.RACE) ? 1000 : (last.distance || 400);
 
       const newRep: IntervalSet = {
@@ -199,7 +186,6 @@ const WorkoutForm: React.FC<WorkoutFormProps> = ({ onSave, onCancel, courses = [
       const val = (field === 'distance' || field === 'reps') ? Number(value) : value;
       updatedIntervals[index] = { ...updatedIntervals[index], [field]: val };
       
-      // Auto-calc pace if time/dist changed
       if (field === 'duration' || field === 'distance') {
           const dist = Number(updatedIntervals[index].distance);
           const timeSec = parseTimeStringToSeconds(String(updatedIntervals[index].duration));
@@ -212,7 +198,6 @@ const WorkoutForm: React.FC<WorkoutFormProps> = ({ onSave, onCancel, courses = [
   };
 
   const updateTotalsFromIntervals = (prevData: Partial<Workout>, intervals: IntervalSet[]): Partial<Workout> => {
-      // Auto-sum distance and duration from reps
       let totalMeters = 0;
       let totalSeconds = 0;
       const splits: number[] = [];
@@ -225,13 +210,11 @@ const WorkoutForm: React.FC<WorkoutFormProps> = ({ onSave, onCancel, courses = [
           totalMeters += m * reps;
           totalSeconds += s * reps;
           
-          // Populate splits array for analytics
           if (s > 0) {
               for(let k=0; k<reps; k++) splits.push(s);
           }
       });
 
-      // Update main metrics
       const newDistKm = totalMeters / 1000;
       const newDurMin = totalSeconds / 60;
       
@@ -240,12 +223,9 @@ const WorkoutForm: React.FC<WorkoutFormProps> = ({ onSave, onCancel, courses = [
           splits
       };
 
-      // Only auto-update totals if NOT Tempo OR Race
-      // For Tempo/Race, user manually enters Total Time/Dist, then breaks down splits.
       if (prevData.type !== WorkoutType.TEMPO && prevData.type !== WorkoutType.RACE) {
           updates.distance = Number(newDistKm.toFixed(2));
           updates.duration = Number(newDurMin.toFixed(2));
-          // Keep formatted duration string in sync if we are auto-updating
           if (totalSeconds > 0) setDurationStr(formatSecondsToTime(totalSeconds));
       }
 
@@ -255,7 +235,6 @@ const WorkoutForm: React.FC<WorkoutFormProps> = ({ onSave, onCancel, courses = [
       };
   };
 
-  // --- Rapid Split ---
   const handleSplitsChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
       setSplitsText(e.target.value);
   };
@@ -265,16 +244,19 @@ const WorkoutForm: React.FC<WorkoutFormProps> = ({ onSave, onCancel, courses = [
       setFormData(prev => ({ ...prev, splits: extracted }));
   };
 
-  // --- Submission ---
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.date || !formData.type) return;
 
     const trainingLoad = (formData.duration && formData.rpe) ? Math.round(formData.duration * formData.rpe) : 0;
+    
+    // Combine Date and Time for correct chronological sorting
+    const combinedDate = new Date(`${formData.date}T${formData.timeOfDay || '00:00'}:00`).toISOString();
 
     const newWorkout: Workout = {
       id: Date.now().toString(),
-      date: new Date(formData.date).toISOString(),
+      date: combinedDate,
+      timeOfDay: formData.timeOfDay,
       type: formData.type as WorkoutType,
       distance: Number(formData.distance) || 0,
       duration: Number(formData.duration) || 0,
@@ -301,13 +283,13 @@ const WorkoutForm: React.FC<WorkoutFormProps> = ({ onSave, onCancel, courses = [
   const handleInstantAnalysis = async () => {
     if (!formData.notes) return;
     setAnalyzing(true);
-    const mockW = { ...formData, date: new Date(formData.date!).toISOString() } as Workout;
+    const combinedDate = new Date(`${formData.date}T${formData.timeOfDay || '00:00'}:00`).toISOString();
+    const mockW = { ...formData, date: combinedDate } as Workout;
     const result = await analyzeWorkoutLog(mockW);
     setAiAnalysis(result);
     setAnalyzing(false);
   };
 
-  // Stats for Precision Table Footer
   const precisionStats = React.useMemo(() => {
      if (!formData.intervals) return { totalTime: '-', totalDist: 0, avgPace: '-', avgTime: '-', avgLap: '-' };
      let tSec = 0;
@@ -324,15 +306,13 @@ const WorkoutForm: React.FC<WorkoutFormProps> = ({ onSave, onCancel, courses = [
          }
      });
      
-     // Calculate Avg Lap for Track (Total Time / Total Laps)
-     // Laps = TotalDist / 400
      const totalLaps = tDist > 0 ? tDist / 400 : 0;
      const avgLapSec = totalLaps > 0 ? tSec / totalLaps : 0;
 
      return {
          totalTime: formatSecondsToTime(tSec, true),
          totalDist: tDist,
-         avgPace: calculatePaceFromSpeed(tSec, tDist), // Total time / Total dist
+         avgPace: calculatePaceFromSpeed(tSec, tDist),
          avgTime: count > 0 ? formatSecondsToTime(tSec / count, true) : '-',
          avgLap: avgLapSec > 0 ? formatSecondsToTime(avgLapSec, true) : '-'
      };
@@ -355,13 +335,16 @@ const WorkoutForm: React.FC<WorkoutFormProps> = ({ onSave, onCancel, courses = [
       
       <form onSubmit={handleSubmit} className="p-6 md:p-8 space-y-8">
         
-        {/* Section 1: Core Logistics */}
         <div className="space-y-4">
            <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-widest border-b border-slate-800 pb-2">Logistics</h3>
-           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               <div>
                 <label className="block text-xs font-medium text-slate-400 mb-1">Date</label>
                 <input type="date" name="date" value={formData.date} onChange={handleInputChange} className="w-full bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-white focus:ring-1 focus:ring-brand-500 outline-none" required />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-400 mb-1">Time</label>
+                <input type="time" name="timeOfDay" value={formData.timeOfDay} onChange={handleInputChange} className="w-full bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-white focus:ring-1 focus:ring-brand-500 outline-none" />
               </div>
               <div className="md:col-span-2">
                 <label className="block text-xs font-medium text-slate-400 mb-1">Session Type</label>
@@ -371,7 +354,6 @@ const WorkoutForm: React.FC<WorkoutFormProps> = ({ onSave, onCancel, courses = [
               </div>
            </div>
            
-           {/* RACE SPECIFIC FIELDS */}
            {isRace && (
                <div className="bg-brand-900/10 border border-brand-900/30 p-4 rounded-lg space-y-4">
                    <div className="flex items-center space-x-2 text-brand-400 mb-2">
@@ -406,7 +388,6 @@ const WorkoutForm: React.FC<WorkoutFormProps> = ({ onSave, onCancel, courses = [
            )}
 
            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-               {/* COURSE SELECTOR */}
                {courses && courses.length > 0 && !isRace && (
                    <div>
                        <label className="block text-xs font-medium text-slate-400 mb-1">Select Course</label>
@@ -448,7 +429,6 @@ const WorkoutForm: React.FC<WorkoutFormProps> = ({ onSave, onCancel, courses = [
            </div>
         </div>
 
-        {/* Section 2: Metrics */}
         <div className={`space-y-4`}>
            <div className="flex justify-between items-end border-b border-slate-800 pb-2">
                 <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-widest">
@@ -506,9 +486,7 @@ const WorkoutForm: React.FC<WorkoutFormProps> = ({ onSave, onCancel, courses = [
            </div>
         </div>
 
-        {/* --- DYNAMIC SECTION --- */}
         {isPrecisionMode ? (
-            /* PRECISION GRID VIEW (Hills / Speed / Intervals / Threshold / Tempo / Race) */
             <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2">
                  <div className="flex justify-between items-center border-b border-slate-800 pb-2">
                      <h3 className="text-sm font-semibold text-brand-400 uppercase tracking-widest flex items-center">
@@ -586,7 +564,6 @@ const WorkoutForm: React.FC<WorkoutFormProps> = ({ onSave, onCancel, courses = [
                                  </tr>
                              )}
                          </tbody>
-                         {/* Footer Totals */}
                          <tfoot className="bg-slate-950 border-t border-slate-700 font-mono text-xs">
                              <tr>
                                  <td className="px-4 py-3 text-slate-500 uppercase font-bold">Sum</td>
@@ -611,7 +588,6 @@ const WorkoutForm: React.FC<WorkoutFormProps> = ({ onSave, onCancel, courses = [
                  </div>
             </div>
         ) : (
-            /* STANDARD INTERVAL VIEW */
             <>
                 {!isSimpleRun && (
                     <div className="space-y-4">
@@ -681,7 +657,6 @@ const WorkoutForm: React.FC<WorkoutFormProps> = ({ onSave, onCancel, courses = [
                     </div>
                 )}
 
-                {/* Section 4: Rapid Split Entry */}
                 <div className="space-y-4">
                     <div className="flex justify-between items-center border-b border-slate-800 pb-2">
                         <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-widest flex items-center">
@@ -711,7 +686,6 @@ const WorkoutForm: React.FC<WorkoutFormProps> = ({ onSave, onCancel, courses = [
             </>
         )}
 
-        {/* Section 5: Qualitative */}
         <div className="space-y-2">
            <div className="flex justify-between items-center">
              <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-widest">Notes</h3>

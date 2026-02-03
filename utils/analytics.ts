@@ -16,19 +16,19 @@ export const parseTimeStringToSeconds = (timeStr: string): number => {
 export const formatSecondsToTime = (seconds: number, precision = false): string => {
     if (isNaN(seconds) || seconds === 0) return '-';
     let totalSeconds = Math.abs(seconds);
-    if (precision) {
-        totalSeconds = Math.round(totalSeconds * 100) / 100;
-        const m = Math.floor(totalSeconds / 60);
-        const s = totalSeconds % 60;
-        const mStr = m < 10 ? `0${m}` : `${m}`;
-        const sStr = s.toFixed(2).padStart(5, '0');
-        return `${mStr}:${sStr}`;
-    }
-    const m = Math.floor(totalSeconds / 60);
+    
+    const h = Math.floor(totalSeconds / 3600);
+    const m = Math.floor((totalSeconds % 3600) / 60);
     const s = totalSeconds % 60;
-    const mStr = m < 10 ? `0${m}` : `${m}`;
-    const sStr = Math.floor(s).toString().padStart(2, '0');
-    return `${mStr}:${sStr}`;
+
+    const hPart = h > 0 ? `${h}:` : '';
+    // Pad minutes only if hours are present
+    const mPart = h > 0 ? m.toString().padStart(2, '0') : m.toString();
+    const sPart = precision 
+        ? s.toFixed(2).padStart(5, '0') 
+        : Math.floor(s).toString().padStart(2, '0');
+
+    return `${hPart}${mPart}:${sPart}`;
 };
 
 export const calculatePaceFromSpeed = (seconds: number, meters: number): string => {

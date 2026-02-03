@@ -1,5 +1,4 @@
 
-
 export enum WorkoutType {
   EASY = 'Easy Run',
   TEMPO = 'Tempo',
@@ -29,7 +28,8 @@ export interface IntervalSet {
 export interface Workout {
   id: string;
   title?: string; // Auto-generated name e.g. "Road Tempo 1"
-  date: string; // ISO string
+  date: string; // ISO string (Date + Time)
+  timeOfDay?: string; // e.g. "08:30"
   type: WorkoutType;
   distance: number; // in km
   duration: number; // in minutes

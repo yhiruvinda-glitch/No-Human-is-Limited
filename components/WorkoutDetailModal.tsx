@@ -1,6 +1,7 @@
+
 import React from 'react';
 import { Workout, Goal, WorkoutType } from '../types';
-import { Calendar, X, Heart, Zap, Timer, BarChart2, MapPin, ShoppingBag, Navigation } from 'lucide-react';
+import { Calendar, X, Heart, Zap, Timer, BarChart2, MapPin, ShoppingBag, Navigation, Clock as ClockIcon } from 'lucide-react';
 import { analyzeIntervalSession, formatSecondsToTime, formatMetric, parseTimeStringToSeconds, calculatePaceFromSpeed } from '../utils/analytics';
 
 interface WorkoutDetailModalProps {
@@ -10,24 +11,38 @@ interface WorkoutDetailModalProps {
 }
 
 const WorkoutDetailModal: React.FC<WorkoutDetailModalProps> = ({ workout, goals, onClose }) => {
-    // Show splits table for Tempo and Race
     const showSplits = workout.type === WorkoutType.TEMPO || workout.type === WorkoutType.RACE;
-    
     const analysis = analyzeIntervalSession(workout, goals);
-    
-    // Determine if we should show VAR/Score (Only for specific types, NOT for Tempo/Race)
     const showVar = [WorkoutType.INTERVAL, WorkoutType.SPEED, WorkoutType.THRESHOLD, WorkoutType.HILLS].includes(workout.type);
+
+    const formatTime = (time?: string) => {
+        if (!time) return null;
+        const [h, m] = time.split(':');
+        const hour = parseInt(h);
+        const ampm = hour >= 12 ? 'PM' : 'AM';
+        const displayHour = hour % 12 || 12;
+        return `${displayHour}:${m} ${ampm}`;
+    };
+
+    const timeStr = formatTime(workout.timeOfDay);
 
     return (
         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in">
             <div className="bg-slate-900 w-full max-w-2xl max-h-[90vh] rounded-2xl border border-slate-700 shadow-2xl overflow-hidden flex flex-col">
-                {/* Header */}
                 <div className="p-6 border-b border-slate-800 flex justify-between items-start bg-slate-950">
                     <div>
                         <h3 className="text-xl font-bold text-white mb-1">{workout.title || workout.type}</h3>
-                        <div className="flex items-center space-x-2 text-sm text-slate-400">
-                            <Calendar size={14} />
-                            <span>{new Date(workout.date).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                        <div className="flex items-center space-x-3 text-sm text-slate-400">
+                            <div className="flex items-center">
+                                <Calendar size={14} className="mr-1.5" />
+                                <span>{new Date(workout.date).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                            </div>
+                            {timeStr && (
+                                <div className="flex items-center bg-slate-800 px-2 py-0.5 rounded border border-slate-700 text-slate-300 font-mono text-xs">
+                                    <ClockIcon size={12} className="mr-1.5" />
+                                    {timeStr}
+                                </div>
+                            )}
                         </div>
                     </div>
                     <button onClick={onClose} className="p-2 hover:bg-slate-800 rounded-full transition text-slate-400 hover:text-white">
@@ -36,7 +51,6 @@ const WorkoutDetailModal: React.FC<WorkoutDetailModalProps> = ({ workout, goals,
                 </div>
 
                 <div className="overflow-y-auto flex-1 p-6 space-y-6">
-                    {/* Stats Grid */}
                     <div className="grid grid-cols-3 md:grid-cols-4 gap-4">
                         <div className="bg-slate-800 p-3 rounded-lg border border-slate-700">
                             <div className="text-[10px] text-slate-500 uppercase tracking-widest">Distance</div>
@@ -55,7 +69,6 @@ const WorkoutDetailModal: React.FC<WorkoutDetailModalProps> = ({ workout, goals,
                             <div className="text-lg font-bold text-blue-400">{workout.trainingLoad || Math.round(workout.duration * workout.rpe)}</div>
                         </div>
                         
-                        {/* New Stats (HR, RPE) */}
                         {(workout.avgHr || workout.maxHr) && (
                             <div className="bg-slate-800 p-3 rounded-lg border border-slate-700 col-span-2 md:col-span-2 flex items-center justify-between px-4">
                                 <div>
@@ -80,7 +93,6 @@ const WorkoutDetailModal: React.FC<WorkoutDetailModalProps> = ({ workout, goals,
                         </div>
                     </div>
 
-                    {/* Context Info Row */}
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                          <div className="bg-slate-800 p-3 rounded-lg border border-slate-700 flex flex-col justify-center">
                              <div className="text-[10px] text-slate-500 uppercase tracking-widest mb-1 flex items-center">
@@ -102,7 +114,6 @@ const WorkoutDetailModal: React.FC<WorkoutDetailModalProps> = ({ workout, goals,
                          </div>
                     </div>
 
-                    {/* SPLIT VIEW (Tempo or Race) */}
                     {showSplits && workout.intervals && workout.intervals.length > 0 && (
                         <div className="space-y-4">
                             <h4 className="text-sm font-bold text-slate-400 uppercase tracking-widest flex items-center">
@@ -119,14 +130,12 @@ const WorkoutDetailModal: React.FC<WorkoutDetailModalProps> = ({ workout, goals,
                                     </thead>
                                     <tbody className="divide-y divide-slate-700/50">
                                         {(() => {
-                                            // Find fastest full km split for highlighting
                                             let bestPaceSec = Infinity;
                                             let bestSplitIndex = -1;
                                             
                                             workout.intervals.forEach((interval, idx) => {
                                                 const dist = Number(interval.distance || 0);
                                                 const time = parseTimeStringToSeconds(String(interval.duration));
-                                                // Only consider major splits (>= 1km or 1000m) for highlighting "best km split"
                                                 if (dist >= 1000 && time > 0) {
                                                     const pace = time / dist;
                                                     if (pace < bestPaceSec) {
@@ -136,7 +145,6 @@ const WorkoutDetailModal: React.FC<WorkoutDetailModalProps> = ({ workout, goals,
                                                 }
                                             });
 
-                                            // If no 1km splits, fallback to highlighting fastest absolute pace of any split > 100m
                                             if (bestSplitIndex === -1) {
                                                 workout.intervals.forEach((interval, idx) => {
                                                     const dist = Number(interval.distance || 0);
@@ -156,7 +164,6 @@ const WorkoutDetailModal: React.FC<WorkoutDetailModalProps> = ({ workout, goals,
                                                 const time = parseTimeStringToSeconds(String(interval.duration));
                                                 const isBest = idx === bestSplitIndex;
                                                 
-                                                // Label Logic
                                                 let label = `Split ${idx + 1}`;
                                                 if (dist === 1000) {
                                                     const suffix = (idx + 1) === 1 ? 'st' : (idx + 1) === 2 ? 'nd' : (idx + 1) === 3 ? 'rd' : 'th';
@@ -189,14 +196,12 @@ const WorkoutDetailModal: React.FC<WorkoutDetailModalProps> = ({ workout, goals,
                         </div>
                     )}
 
-                    {/* STANDARD INTERVAL ANALYSIS (Intervals, Speed, Hills) - NOT for Tempo/Race */}
                     {!showSplits && analysis && (
                         <div className="space-y-4">
                             <h4 className="text-sm font-bold text-slate-400 uppercase tracking-widest flex items-center">
                                 <BarChart2 size={16} className="mr-2" /> Session Analysis
                             </h4>
                             
-                            {/* Score Cards (Only show for relevant types) */}
                             {showVar && (
                                 <div className="grid grid-cols-3 gap-4 mb-4">
                                     <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700/50 text-center">
@@ -216,7 +221,6 @@ const WorkoutDetailModal: React.FC<WorkoutDetailModalProps> = ({ workout, goals,
                                 </div>
                             )}
 
-                            {/* Groups Table */}
                             <div className="bg-slate-800 rounded-xl overflow-hidden border border-slate-700">
                                 <table className="w-full text-sm">
                                     <thead className="bg-slate-950 text-slate-500 uppercase text-[10px] tracking-wider">
@@ -245,7 +249,6 @@ const WorkoutDetailModal: React.FC<WorkoutDetailModalProps> = ({ workout, goals,
                                                 <td className="px-4 py-3 text-right font-mono text-blue-400">{group.pace}</td>
                                                 <td className="px-4 py-3 text-right font-mono text-slate-400 text-xs">{group.recovery || '-'}</td>
                                             </tr>
-                                            {/* Detailed Reps Row */}
                                             <tr>
                                                 <td colSpan={showVar ? 6 : 5} className="px-4 py-2 bg-slate-900/50">
                                                     <div className="flex flex-wrap gap-2 justify-end">
@@ -272,7 +275,6 @@ const WorkoutDetailModal: React.FC<WorkoutDetailModalProps> = ({ workout, goals,
                         </div>
                     )}
 
-                    {/* Notes */}
                     {workout.notes && (
                         <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700/50">
                             <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Notes</h4>

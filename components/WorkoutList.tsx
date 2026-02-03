@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { Workout, WorkoutType, Goal, Course } from '../types';
-import { Activity, Search, Timer, CheckCircle2, GitCompare, Trash2, AlertTriangle, Heart, Calendar, Trophy } from 'lucide-react';
+import { Activity, Search, Timer, CheckCircle2, GitCompare, Trash2, AlertTriangle, Heart, Calendar, Trophy, Clock as ClockIcon } from 'lucide-react';
 import { formatSecondsToTime, formatMetric, getWorkoutSummary } from '../utils/analytics';
 import { compareWorkouts } from '../services/geminiService';
 import WorkoutDetailModal from './WorkoutDetailModal';
@@ -32,30 +32,24 @@ const WorkoutList: React.FC<WorkoutListProps> = ({ workouts, goals, courses, onD
   const [filter, setFilter] = useState('ALL');
   const [search, setSearch] = useState('');
   
-  // Selection & Modal State
   const [selectedWorkout, setSelectedWorkout] = useState<Workout | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   
-  // Comparison State
   const [compareMode, setCompareMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [comparisonResult, setComparisonResult] = useState<string | null>(null);
   const [analyzingComparison, setAnalyzingComparison] = useState(false);
 
-  // Include all workouts including Races
   const historyWorkouts = useMemo(() => {
       return workouts;
   }, [workouts]);
 
-  // --- Dynamic Tab Sorting ---
   const sortedTabs = useMemo(() => {
-      // 1. Calculate counts for each type
       const counts: Record<string, number> = {};
       historyWorkouts.forEach(w => {
           counts[w.type] = (counts[w.type] || 0) + 1;
       });
 
-      // 2. Sort tabs: ALL first, then by count descending
       return [...FILTER_TABS].sort((a, b) => {
           if (a.value === 'ALL') return -1;
           if (b.value === 'ALL') return 1;
@@ -72,13 +66,12 @@ const WorkoutList: React.FC<WorkoutListProps> = ({ workouts, goals, courses, onD
     .filter(w => w.notes.toLowerCase().includes(search.toLowerCase()) || w.type.toLowerCase().includes(search.toLowerCase()) || (w.title && w.title.toLowerCase().includes(search.toLowerCase())) || (w.competition && w.competition.toLowerCase().includes(search.toLowerCase())))
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-  // --- Statistics Calculation ---
   const stats = useMemo(() => {
       let dist = 0;
-      let dur = 0; // minutes
-      let durForPace = 0; // minutes (for pace calc only)
-      let trackDist = 0; // km
-      let trackDur = 0; // minutes (for lap calc only)
+      let dur = 0;
+      let durForPace = 0;
+      let trackDist = 0;
+      let trackDur = 0;
 
       const count = filteredWorkouts.length;
 
@@ -90,9 +83,6 @@ const WorkoutList: React.FC<WorkoutListProps> = ({ workouts, goals, courses, onD
               durForPace += w.duration;
           }
 
-          // Track stats (for laps)
-          // Specifically requested types for lap counting in "All" view + relevant tabs
-          // Added WorkoutType.EASY to include easy runs in lap counts if on track
           const isQualityTrackType = [
               WorkoutType.TEMPO, 
               WorkoutType.THRESHOLD, 
@@ -176,6 +166,15 @@ const WorkoutList: React.FC<WorkoutListProps> = ({ workouts, goals, courses, onD
       );
   };
 
+  const formatTime = (time?: string) => {
+    if (!time) return null;
+    const [h, m] = time.split(':');
+    const hour = parseInt(h);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const displayHour = hour % 12 || 12;
+    return `${displayHour}:${m} ${ampm}`;
+  };
+
   return (
     <div className="max-w-4xl mx-auto space-y-6 pb-10">
       
@@ -187,7 +186,6 @@ const WorkoutList: React.FC<WorkoutListProps> = ({ workouts, goals, courses, onD
           />
       )}
 
-      {/* Comparison Overlay */}
       {compareMode && (
           <div className="fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-slate-700 p-4 z-40 animate-in slide-in-from-bottom">
               <div className="max-w-4xl mx-auto flex justify-between items-center">
@@ -215,7 +213,6 @@ const WorkoutList: React.FC<WorkoutListProps> = ({ workouts, goals, courses, onD
           </div>
       )}
 
-      {/* Header & Controls */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h2 className="text-3xl font-bold text-white flex items-center">
@@ -262,10 +259,8 @@ const WorkoutList: React.FC<WorkoutListProps> = ({ workouts, goals, courses, onD
         </div>
       </div>
       
-      {/* SUMMARY STATS (Dynamic based on Filter) */}
       {renderSummaryStats()}
 
-      {/* List */}
       <div className="space-y-4">
         {filteredWorkouts.length === 0 ? (
             <div className="text-center py-20 bg-slate-800/30 rounded-xl border border-dashed border-slate-700">
@@ -274,23 +269,20 @@ const WorkoutList: React.FC<WorkoutListProps> = ({ workouts, goals, courses, onD
         ) : (
             filteredWorkouts.map((workout) => {
                 const isSelected = selectedIds.includes(workout.id);
-                // Check if this workout is a Course Record
                 const isCr = courses.some(c => c.bestEffort?.workoutId === workout.id);
                 
-                // Structured Workout Summary Logic
                 const isStructured = [WorkoutType.INTERVAL, WorkoutType.SPEED, WorkoutType.THRESHOLD, WorkoutType.HILLS].includes(workout.type);
                 const hasIntervalData = workout.intervals && workout.intervals.length > 0;
                 const summary = isStructured && hasIntervalData ? getWorkoutSummary(workout) : null;
 
-                // Better title logic for the list (consistent with Races tab)
                 const displayTitle = workout.title || (workout.type === WorkoutType.RACE ? (workout.competition || workout.type) : workout.type);
+                const timeStr = formatTime(workout.timeOfDay);
 
                 return (
                     <div 
                         key={workout.id} 
                         className={`bg-slate-800 rounded-xl border transition-all hover:border-slate-600 group relative ${isSelected ? 'border-brand-500 ring-1 ring-brand-500' : 'border-slate-800'}`}
                     >
-                        {/* Delete Button */}
                         {!compareMode && (
                             <div className="absolute top-4 right-4 z-20">
                                 <button 
@@ -303,7 +295,6 @@ const WorkoutList: React.FC<WorkoutListProps> = ({ workouts, goals, courses, onD
                             </div>
                         )}
 
-                        {/* Comparison Checkbox */}
                         {compareMode && (
                             <div className="absolute left-4 top-1/2 -translate-y-1/2 z-20">
                                 <button 
@@ -317,7 +308,6 @@ const WorkoutList: React.FC<WorkoutListProps> = ({ workouts, goals, courses, onD
 
                         <div className={`p-6 cursor-pointer ${compareMode ? 'pl-14' : ''}`} onClick={() => !compareMode && setSelectedWorkout(workout)}>
                             <div className="flex items-start gap-4">
-                                {/* Avatar/Type Icon */}
                                 <div className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 border-2 border-slate-700 shadow-sm ${
                                     workout.type === WorkoutType.INTERVAL ? 'bg-red-500/10 text-red-500' :
                                     workout.type === WorkoutType.TEMPO ? 'bg-blue-500/10 text-blue-500' :
@@ -329,16 +319,22 @@ const WorkoutList: React.FC<WorkoutListProps> = ({ workouts, goals, courses, onD
                                 </div>
 
                                 <div className="flex-1 min-w-0">
-                                     {/* Header */}
                                      <div className="flex flex-col mb-3">
-                                        <div className="text-xs text-slate-400 font-medium flex items-center mb-0.5">
+                                        <div className="text-xs text-slate-400 font-medium flex items-center gap-2 mb-0.5">
                                             <span>Me</span>
-                                            <span className="mx-1">•</span>
+                                            <span className="text-slate-700">•</span>
                                             <span className="flex items-center"><Calendar size={10} className="mr-1"/> {new Date(workout.date).toLocaleDateString()}</span>
+                                            {timeStr && (
+                                                <>
+                                                    <span className="text-slate-700">•</span>
+                                                    <span className="flex items-center text-slate-500 bg-slate-900/50 px-1.5 py-0.5 rounded border border-slate-800 font-mono text-[9px]">
+                                                        <ClockIcon size={10} className="mr-1"/> {timeStr}
+                                                    </span>
+                                                </>
+                                            )}
                                         </div>
                                         <h3 className="font-bold text-white text-xl hover:text-brand-500 transition truncate pr-8">{displayTitle}</h3>
                                         
-                                        {/* Structured Workout Summary */}
                                         {summary && (
                                             <div className="mt-1">
                                                 <span className="text-sm text-brand-400 font-mono font-bold bg-brand-900/10 px-2 py-1 rounded border border-brand-500/20 inline-block">
@@ -348,12 +344,10 @@ const WorkoutList: React.FC<WorkoutListProps> = ({ workouts, goals, courses, onD
                                         )}
                                      </div>
 
-                                     {/* Description */}
                                      {workout.notes && (
                                          <p className="text-sm text-slate-400 mb-4 line-clamp-2">{workout.notes}</p>
                                      )}
 
-                                     {/* Metrics Row */}
                                      <div className="flex flex-wrap items-center gap-6 text-slate-300">
                                          <div>
                                              <div className="text-[10px] uppercase text-slate-500 font-bold">Distance</div>
@@ -375,7 +369,6 @@ const WorkoutList: React.FC<WorkoutListProps> = ({ workouts, goals, courses, onD
                                          )}
                                      </div>
 
-                                     {/* Badges */}
                                      <div className="flex gap-2 mt-4">
                                          {isCr && (
                                             <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-yellow-400/20 text-yellow-400 border border-yellow-400/30">
@@ -402,10 +395,9 @@ const WorkoutList: React.FC<WorkoutListProps> = ({ workouts, goals, courses, onD
         )}
       </div>
 
-      {/* Delete Confirmation Modal */}
       {deleteConfirm && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
-              <div className="bg-slate-900 border border-slate-700 rounded-xl max-w-md w-full p-6 shadow-2xl animate-in zoom-in-95">
+              <div className="bg-slate-900 border border-slate-700 rounded-xl max-md w-full p-6 shadow-2xl animate-in zoom-in-95">
                   <div className="flex items-center space-x-3 mb-4">
                       <div className="p-3 rounded-full bg-red-900/30 text-red-500">
                           <AlertTriangle size={24} />

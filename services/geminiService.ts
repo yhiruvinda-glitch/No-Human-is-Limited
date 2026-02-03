@@ -1,10 +1,9 @@
+
 import { GoogleGenAI } from "@google/genai";
 import { Workout, Goal, UserProfile } from '../types';
 import { SYSTEM_INSTRUCTION_COACH } from '../constants';
 
 // Initialize Gemini Client
-// Note: process.env.API_KEY is assumed to be available.
-// On Vercel, if API_KEY is not set, this might be undefined.
 const apiKey = process.env.API_KEY;
 const ai = new GoogleGenAI({ apiKey: apiKey || '' }); 
 
@@ -15,7 +14,6 @@ const handleGenAIError = (error: any, defaultMsg: string) => {
     console.error("Gemini API Error:", error);
     const msg = error.message || '';
     
-    // Check for missing/invalid key specifically
     if (msg.includes('API key not valid') || msg.includes('API_KEY_INVALID') || !apiKey) {
         return "⚠️ Setup Error: API_KEY is missing or invalid. Please configure it in your Vercel project settings.";
     }
@@ -34,8 +32,6 @@ const checkApiKey = (): boolean => {
     return true;
 }
 
-// Helper: Smart Generate with Fallback
-// Tries PRIMARY_MODEL first. If it fails (non-auth error), tries FALLBACK_MODEL.
 const generateSafe = async (contents: any, config?: any): Promise<any> => {
     try {
         const response = await ai.models.generateContent({
@@ -46,15 +42,10 @@ const generateSafe = async (contents: any, config?: any): Promise<any> => {
         return response;
     } catch (error: any) {
         const msg = error.message || '';
-        
-        // If it's an Auth error or Key error, failing back won't help. Throw it.
         if (msg.includes('API key') || msg.includes('403') || msg.includes('INVALID_ARGUMENT')) {
             throw error;
         }
-
         console.warn(`Primary model (${PRIMARY_MODEL}) failed. Retrying with fallback (${FALLBACK_MODEL})...`, error);
-
-        // Fallback retry
         const response = await ai.models.generateContent({
             model: FALLBACK_MODEL,
             contents,
@@ -65,10 +56,12 @@ const generateSafe = async (contents: any, config?: any): Promise<any> => {
 };
 
 export const analyzeWorkoutLog = async (workout: Workout, profile?: UserProfile): Promise<string> => {
-  if (!checkApiKey()) return "⚠️ Configuration Error: API_KEY is missing. Please set it in Vercel settings.";
+  if (!checkApiKey()) return "⚠️ Configuration Error: API_KEY is missing.";
 
   try {
+    const today = new Date().toLocaleDateString();
     const prompt = `
+      Today's date is: ${today}. Use this as the reference point for relative time.
       Analyze this specific workout for the following runner:
       ${profile ? `Profile: Age ${profile.age}, Preferred Race ${profile.preferredRace}. Injuries: ${profile.injuryHistory.filter(i=>i.status!=='Resolved').map(i=>i.description).join(', ') || 'None active'}.` : ''}
 
@@ -95,29 +88,34 @@ export const analyzeWorkoutLog = async (workout: Workout, profile?: UserProfile)
     
     return response.text || "Could not generate analysis.";
   } catch (error) {
-    return handleGenAIError(error, "AI service unavailable. Please check your API key.");
+    return handleGenAIError(error, "AI service unavailable.");
   }
 };
 
 export const getWeeklyCoachInsights = async (workouts: Workout[], profile?: UserProfile): Promise<string> => {
-  if (!checkApiKey()) return "⚠️ Configuration Error: API_KEY is missing. Please set it in Vercel settings.";
+  if (!checkApiKey()) return "⚠️ Configuration Error: API_KEY is missing.";
 
   try {
+    const today = new Date().toLocaleDateString();
+    // FIX: Sort newest-first, take 10, then reverse to chronological for AI readability
     const recentWorkouts = workouts
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-      .slice(0, 10); // Last 10 workouts
+      .slice(0, 10)
+      .reverse();
 
     const prompt = `
+      Today's date is: ${today}. Use this to accurately calculate gaps between sessions.
+      If the most recent workout was several days ago, do not say it was "yesterday".
       ${profile ? `Athlete Profile: Name: ${profile.name}, Age: ${profile.age}, Weekly Avail: ${profile.weeklyAvailability}. Injuries: ${JSON.stringify(profile.injuryHistory)}` : ''}
       
-      Here are the athlete's recent workouts (JSON format):
+      Here are the athlete's 10 most recent workouts (Chronological Order):
       ${JSON.stringify(recentWorkouts)}
 
-      Analyze the training trend over the last week.
-      - Are they balancing intensity and volume?
-      - Analyze the Training Load (Duration * RPE) trend.
-      - Look at Heart Rate response if available.
-      - Any signs of overtraining (high RPE on easy days)?
+      Analyze the training trend OVER THE LAST WEEK relative to today (${today}).
+      - Focus on the most recent entries. If there are gaps, comment on the comeback or consistency.
+      - Analyze the Training Load trend.
+      - Look at Heart Rate response.
+      - Any signs of overtraining?
       - Are they hitting the specific systems for their preferred race (${profile?.preferredRace || '5k'})?
       
       Format response as a concise bulleted list of 3 Key Insights and 1 Actionable Tip for next week.
@@ -135,34 +133,40 @@ export const getWeeklyCoachInsights = async (workouts: Workout[], profile?: User
 
 export const getDailyGuidance = async (workouts: Workout[], goals: Goal[], profile?: UserProfile): Promise<{title: string, content: string}> => {
     if (!checkApiKey()) {
-        return { title: 'Setup Required', content: 'API_KEY is missing. Please configure your Vercel Environment Variables.' };
+        return { title: 'Setup Required', content: 'API_KEY is missing.' };
     }
 
     try {
-        const recent = workouts.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 5);
+        const today = new Date().toLocaleDateString();
+        // FIX: Grab 5 most recent workouts correctly
+        const recent = workouts
+            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+            .slice(0, 5)
+            .reverse();
         
-        // Check for upcoming races
         const upcomingRace = goals.find(g => {
             if (!g.deadline) return false;
             const diff = new Date(g.deadline).getTime() - Date.now();
-            return diff > 0 && diff < (14 * 24 * 60 * 60 * 1000); // Within 2 weeks
+            return diff > 0 && diff < (14 * 24 * 60 * 60 * 1000);
         });
 
         const prompt = `
-        Context:
-        ${profile ? `Athlete: Age ${profile.age}, History of ${profile.injuryHistory.filter(i=>i.status==='Active').map(i=>i.description).join(',') || 'no active injuries'}.` : ''}
-        Recent Workouts: ${JSON.stringify(recent)}
-        Goals: ${JSON.stringify(goals)}
+        Today's date is: ${today}. Reference this for taper calculations.
+        Athlete Context: ${profile ? `Age ${profile.age}, Injuries: ${profile.injuryHistory.filter(i=>i.status==='Active').map(i=>i.description).join(',') || 'none'}.` : ''}
+        
+        Recent Training History (Last 5 sessions):
+        ${JSON.stringify(recent)}
+        
+        Current Goals: ${JSON.stringify(goals)}
         Upcoming Race: ${upcomingRace ? `Yes, ${upcomingRace.name} on ${upcomingRace.deadline}` : 'None immediate'}
 
         Task:
         Provide a specific training suggestion for TODAY. 
-        If a race is within 14 days, strictly apply tapering principles (reduce volume, keep intensity sharpness).
-        If fatigued (high RPE recently), suggest recovery.
-        Consider their weekly availability: ${profile?.weeklyAvailability || 'Unspecified'}.
+        If a race is within 14 days, strictly apply tapering principles.
+        Check the date of the very last workout. If it was more than 2 days ago, encourage getting back into rhythm rolig.
         
         Output Format:
-        Return JSON object: { "title": "Short Headline (e.g. Rest Day Recommended)", "content": "2-3 sentences of specific advice." }
+        Return JSON object: { "title": "Short Headline", "content": "2-3 sentences of specific advice." }
         `;
 
         const response = await generateSafe(prompt, {
@@ -178,20 +182,12 @@ export const getDailyGuidance = async (workouts: Workout[], goals: Goal[], profi
 
     } catch (error: any) {
         console.error("Gemini Daily Guidance Error:", error);
-        const msg = error.message || '';
-        
-        if (msg.includes('API key') || !apiKey) {
-             return { title: 'Configuration Error', content: 'Invalid or missing API Key. Check Vercel settings.' };
-        }
-        if (msg.includes('429') || msg.includes('Quota') || msg.includes('RESOURCE_EXHAUSTED')) {
-             return { title: 'AI Limit Reached', content: 'Quota limits reached. Focus on consistency and listen to your body today.' };
-        }
         return { title: 'Daily Focus', content: 'Focus on consistency and recovery today.' };
     }
 };
 
 export const compareWorkouts = async (w1: Workout, w2: Workout): Promise<string> => {
-    if (!checkApiKey()) return "⚠️ API_KEY missing. Cannot compare.";
+    if (!checkApiKey()) return "⚠️ API_KEY missing.";
 
     try {
         const prompt = `
@@ -207,10 +203,6 @@ export const compareWorkouts = async (w1: Workout, w2: Workout): Promise<string>
 
         Task:
         Identify the progression or regression.
-        - Compare pace vs heart rate efficiency.
-        - Compare perceived effort.
-        - Which session was higher quality for a 5K runner?
-        
         Keep it to 4 concise sentences.
         `;
 
@@ -225,18 +217,25 @@ export const compareWorkouts = async (w1: Workout, w2: Workout): Promise<string>
 };
 
 export const chatWithCoach = async (message: string, contextWorkouts: Workout[], profile?: UserProfile): Promise<string> => {
-    if (!checkApiKey()) return "⚠️ Configuration Error: API_KEY is missing. Please set it in Vercel settings.";
+    if (!checkApiKey()) return "⚠️ Configuration Error: API_KEY is missing.";
 
     try {
-        const recentContext = contextWorkouts.slice(0, 5);
+        const today = new Date().toLocaleDateString();
+        // FIX: Ensure chat context uses 5 most recent workouts
+        const recentContext = contextWorkouts
+            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+            .slice(0, 5)
+            .reverse();
+
         const prompt = `
+        Today's date is: ${today}. Use this as your temporal reference.
         Context: 
         User Profile: ${profile ? JSON.stringify(profile) : 'N/A'}
-        Recent Workouts: ${JSON.stringify(recentContext)}.
+        Most Recent Training: ${JSON.stringify(recentContext)}.
         
         User Question: "${message}"
         
-        Answer as their coach. Keep it motivating but realistic. Use their profile (Name, Injuries, Goals) to personalize the answer.
+        Answer as their coach Jakob. Use their profile (Name, Injuries, Goals) to personalize the answer.
         `;
 
         const response = await generateSafe(prompt, {
