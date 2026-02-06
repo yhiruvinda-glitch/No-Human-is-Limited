@@ -1,9 +1,105 @@
-import { DbSchema } from '../types';
+import { DbSchema } from '@/types';
 
 // Generated Static DB State
 export const STATIC_DB: DbSchema = {
   "version": "2026-02-01-season-sync-v4",
   "workouts": [
+    {
+      "id": "1770383441961",
+      "date": "2026-02-05T12:40:00.000Z",
+      "timeOfDay": "18:10",
+      "type": "Speed Work",
+      "distance": 0.5,
+      "duration": 1.21,
+      "feeling": 5,
+      "rpe": 7,
+      "trainingLoad": 8,
+      "notes": "Ran a 100m leg and a 400m leg to anchor the team in the Intra-Faculty Meet Relays, It was fun.",
+      "intervals": [
+        {
+          "reps": 1,
+          "distance": 100,
+          "duration": "12.80",
+          "recovery": "",
+          "pace": "02:08.0"
+        },
+        {
+          "reps": 1,
+          "distance": 400,
+          "duration": "59.90",
+          "recovery": "",
+          "pace": "02:29.7"
+        }
+      ],
+      "splits": [
+        12.8,
+        59.9
+      ],
+      "shoe": "Adidas Adizero Distancestar",
+      "route": "UOP",
+      "courseId": "",
+      "surface": "Track",
+      "competition": "",
+      "team": "",
+      "place": "",
+      "eventName": "",
+      "isPb": false,
+      "isSb": true,
+      "title": "Speed Work 4"
+    },
+    {
+      "id": "1770216309630",
+      "date": "2026-02-04T11:56:00.000Z",
+      "timeOfDay": "17:26",
+      "type": "Threshold",
+      "distance": 6,
+      "duration": 23.42,
+      "feeling": 5,
+      "rpe": 6,
+      "trainingLoad": 141,
+      "notes": "Some threshold running after a while",
+      "intervals": [
+        {
+          "reps": 1,
+          "distance": 2000,
+          "duration": "7:49.38",
+          "recovery": "100s",
+          "pace": "03:54.7"
+        },
+        {
+          "reps": 1,
+          "distance": 2000,
+          "duration": "7:50.25",
+          "recovery": "100s",
+          "pace": "03:55.1"
+        },
+        {
+          "reps": 1,
+          "distance": 2000,
+          "duration": "7:45.75",
+          "recovery": "100s",
+          "pace": "03:52.9"
+        }
+      ],
+      "splits": [
+        469.38,
+        470.25,
+        465.75
+      ],
+      "shoe": "Adidas Adizero Evo SL",
+      "route": "UOP",
+      "courseId": "",
+      "surface": "Track",
+      "avgHr": 160,
+      "maxHr": 174,
+      "competition": "",
+      "team": "",
+      "place": "",
+      "eventName": "",
+      "isPb": false,
+      "isSb": true,
+      "title": "Threshold 10"
+    },
     {
       "id": "1770128589933",
       "date": "2026-02-03T00:00:00.000Z",
@@ -792,7 +888,7 @@ export const STATIC_DB: DbSchema = {
       "eventName": "",
       "title": "Speed Work 2",
       "isPb": false,
-      "isSb": true
+      "isSb": false
     },
     {
       "id": "1765427224516",
@@ -1501,7 +1597,7 @@ export const STATIC_DB: DbSchema = {
       "place": "",
       "eventName": "",
       "title": "Speed Work 1",
-      "isSb": true,
+      "isSb": false,
       "isPb": false
     },
     {
